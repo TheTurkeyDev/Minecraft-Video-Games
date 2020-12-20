@@ -1,0 +1,12 @@
+name: 'video_games'
+main: dev.theturkey.videogames.VGCore
+description: 'Remaking video games in Minecraft!'
+version: ${projectVersion}
+authors: [TurkeyDev]
+api-version: '1.16'
+load: STARTUP
+commands:
+  play:
+    description: Used to play a game
+  leave:
+    description: Used to leave a game

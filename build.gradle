@@ -1,0 +1,29 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'maven-publish'
+
+ext.buildnumber = 0
+if (System.getenv('BUILD_NUMBER') != null)
+    project.buildnumber = Integer.parseInt(System.getenv('BUILD_NUMBER'))
+else
+    logger.lifecycle "No build number detected, setting to 0"
+
+group = "dev.theturkey.videogames"
+archivesBaseName = "videogames"
+version = "${mod_version}.${buildnumber}"
+
+sourceCompatibility = targetCompatibility = '1.8'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+}
+
+dependencies {
+    compileOnly 'org.spigotmc:spigot:1.16.4-R0.1-SNAPSHOT'
+}
+
+processResources {
+    expand projectVersion: project.version
+}
