@@ -6,7 +6,6 @@ import org.bukkit.block.Biome;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.generator.ChunkGenerator;
 
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -21,15 +20,13 @@ import java.util.Random;
 public class VoidWorldGenerator extends ChunkGenerator
 {
 	@Override
-	@Nonnull
-	public List<BlockPopulator> getDefaultPopulators(@Nonnull World world)
+	public List<BlockPopulator> getDefaultPopulators(World world)
 	{
 		return Collections.emptyList();
 	}
 
 	@Override
-	@Nonnull
-	public ChunkData generateChunkData(@Nonnull World world, @Nonnull Random random, int chunkX, int chunkZ, @Nonnull BiomeGrid biome)
+	public ChunkData generateChunkData(World world, Random random, int chunkX, int chunkZ, BiomeGrid biome)
 	{
 		ChunkData chunkData = super.createChunkData(world);
 
@@ -50,13 +47,13 @@ public class VoidWorldGenerator extends ChunkGenerator
 	}
 
 	@Override
-	public boolean canSpawn(@Nonnull World world, int x, int z)
+	public boolean canSpawn(World world, int x, int z)
 	{
 		return true;
 	}
 
 	@Override
-	public Location getFixedSpawnLocation(@Nonnull World world, @Nonnull Random random)
+	public Location getFixedSpawnLocation(World world, Random random)
 	{
 		return new Location(world, 0, 255, 0);
 	}

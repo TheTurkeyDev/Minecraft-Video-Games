@@ -1,5 +1,6 @@
 package dev.theturkey.videogames.games;
 
+import dev.theturkey.videogames.games.brickbreaker.BrickBreakerGame;
 import dev.theturkey.videogames.util.Vector2I;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;

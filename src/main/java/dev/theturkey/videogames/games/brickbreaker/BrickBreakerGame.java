@@ -1,24 +1,22 @@
-package dev.theturkey.videogames.games;
+package dev.theturkey.videogames.games.brickbreaker;
 
 import dev.theturkey.videogames.VGCore;
+import dev.theturkey.videogames.games.VideoGameBase;
 import dev.theturkey.videogames.util.Vector2I;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.EulerAngle;
 
 public class BrickBreakerGame extends VideoGameBase
 {
 	private static final int DIST_FROM_PLAYER = 30;
 	private static final int Y = 75;
-	private ArmorStand paddle;
-	private int lookingTask = -1;
+	private Paddle paddle;
+	private Ball ball;
+	private int gameTick = -1;
 
 	private int[][] blocks = new int[][]{
 			{5, 4, 3, 2, 1, 2, 3, 4, 5},
@@ -39,15 +37,13 @@ public class BrickBreakerGame extends VideoGameBase
 		Vector2I gameLoc = getGameLocScaled();
 		world.getBlockAt(new Location(world, gameLoc.getX(), Y, gameLoc.getY())).setType(Material.BEDROCK);
 
+
 		player.teleport(new Location(world, gameLoc.getX() + 0.5, Y + 1, gameLoc.getY() + 0.5, 0, 0), PlayerTeleportEvent.TeleportCause.COMMAND);
-		Location paddleLoc = new Location(world, gameLoc.getX() + 0.5, Y - 4, gameLoc.getY() + 0.5 + DIST_FROM_PLAYER, 0, 0);
-		paddle = (ArmorStand) world.spawnEntity(paddleLoc, EntityType.ARMOR_STAND);
-		paddle.setVisible(false);
-		paddle.getEquipment().setItemInOffHand(new ItemStack(Material.STONE_SLAB));
-		paddle.setLeftArmPose(new EulerAngle(-Math.PI / 16, Math.PI / 4, 0));
-		paddle.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_SLAB));
-		paddle.setRightArmPose(new EulerAngle(-Math.PI / 16, Math.PI / 4, 0));
-		paddle.setGravity(false);
+
+		paddle = new Paddle();
+		paddle.setWidth(8, world, gameLoc.getX(), Y - 4, gameLoc.getY() + 0.5 + DIST_FROM_PLAYER);
+
+		ball = new Ball(world, gameLoc.getX() + 0.5, Y - 4, gameLoc.getY() + 0.5 + DIST_FROM_PLAYER);
 
 		for(int x = -10; x < 10; x++)
 		{
@@ -70,19 +66,17 @@ public class BrickBreakerGame extends VideoGameBase
 
 	public void startGame(World world, Player player)
 	{
-		lookingTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(VGCore.getPlugin(), () ->
+		gameTick = Bukkit.getScheduler().scheduleSyncRepeatingTask(VGCore.getPlugin(), () ->
 		{
 			float yaw = player.getLocation().getYaw();
-			Location newLoc = paddle.getLocation().clone();
 			double newX = Math.max(-9, Math.min(9, (DIST_FROM_PLAYER * Math.tan(Math.toRadians(yaw))) - 0.5));
-			newLoc.setX(getGameLocScaled().getX() - newX);
-			paddle.teleport(newLoc);
+			paddle.update(getGameLocScaled().getX() - newX);
 		}, 0, 1);
 	}
 
 	public void endGame(World world, Player player)
 	{
-		Bukkit.getScheduler().cancelTask(lookingTask);
+		Bukkit.getScheduler().cancelTask(gameTick);
 	}
 
 	@Override
@@ -91,6 +85,7 @@ public class BrickBreakerGame extends VideoGameBase
 		Vector2I gameLoc = getGameLocScaled();
 		world.getBlockAt(new Location(world, gameLoc.getX(), 49, gameLoc.getY())).setType(Material.AIR);
 		paddle.remove();
+		ball.remove();
 
 		for(int x = -10; x < 10; x++)
 		{

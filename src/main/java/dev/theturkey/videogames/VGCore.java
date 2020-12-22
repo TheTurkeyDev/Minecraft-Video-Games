@@ -5,6 +5,7 @@ import dev.theturkey.videogames.commands.IVGCommand;
 import dev.theturkey.videogames.commands.LeaveCommand;
 import dev.theturkey.videogames.commands.PlayCommand;
 import dev.theturkey.videogames.games.GameManager;
+import dev.theturkey.videogames.listeners.EntityListener;
 import dev.theturkey.videogames.listeners.PlayerListener;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -13,10 +14,8 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class VGCore extends JavaPlugin
@@ -26,7 +25,7 @@ public class VGCore extends JavaPlugin
 	private static Map<String, IVGCommand> commands = new HashMap<>();
 
 	@Override
-	public ChunkGenerator getDefaultWorldGenerator(@Nonnull String worldName, String id)
+	public ChunkGenerator getDefaultWorldGenerator(String worldName, String id)
 	{
 		return new VoidWorldGenerator();
 	}
@@ -36,6 +35,7 @@ public class VGCore extends JavaPlugin
 	{
 		PluginManager m = getServer().getPluginManager();
 		m.registerEvents(new PlayerListener(), this);
+		m.registerEvents(new EntityListener(), this);
 
 		commands.put("play", new PlayCommand());
 		commands.put("leave", new LeaveCommand());
@@ -48,7 +48,7 @@ public class VGCore extends JavaPlugin
 	}
 
 	@Override
-	public boolean onCommand(@Nonnull CommandSender sender, @Nonnull Command cmd, @Nonnull String label, @Nonnull String[] args)
+	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)
 	{
 		Player player;
 		if(sender instanceof Player)
