@@ -1,19 +1,17 @@
 package dev.theturkey.videogames.games.brickbreaker;
 
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.entity.Minecart;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Paddle
 {
-	private static final float WIDTH = 0.9f;
-	private List<ArmorStand> paddleEnts;
+	private static final float WIDTH = 1.1f;
+	private List<Minecart> paddleEnts;
 
 	public Paddle()
 	{
@@ -24,12 +22,9 @@ public class Paddle
 		paddleEnts = new ArrayList<>();
 		for(int i = 0; i < ents; i++)
 		{
-			Location paddleLoc = new Location(world, x - ((WIDTH * paddleEnts.size()) / 2) + 0.5 + (WIDTH * i), y, z, 0, 0);
-			ArmorStand paddle = (ArmorStand) world.spawnEntity(paddleLoc, EntityType.ARMOR_STAND);
-			paddle.getEquipment().setHelmet(new ItemStack(Material.STONE_SLAB));
+			Location paddleLoc = new Location(world, (x - ((WIDTH * paddleEnts.size()) / 2)) + (WIDTH * i) + 0.5, y, z, 0, 0);
+			Minecart paddle = (Minecart) world.spawnEntity(paddleLoc, EntityType.MINECART);
 			paddle.setGravity(false);
-			paddle.setVisible(false);
-			paddle.setMarker(true);
 
 			paddleEnts.add(paddle);
 		}
@@ -40,16 +35,21 @@ public class Paddle
 	{
 		for(int i = 0; i < paddleEnts.size(); i++)
 		{
-			ArmorStand paddle = paddleEnts.get(i);
+			Minecart paddle = paddleEnts.get(i);
 			Location newLoc = paddle.getLocation().clone();
-			newLoc.setX(centerX - ((WIDTH * paddleEnts.size()) / 2) + 0.5 + (WIDTH * i));
+			newLoc.setX((centerX - ((WIDTH * paddleEnts.size()) / 2)) + (WIDTH * i) + 0.5);
 			paddle.teleport(newLoc);
 		}
 	}
 
 	public void remove()
 	{
-		for(ArmorStand paddle : paddleEnts)
+		for(Minecart paddle : paddleEnts)
 			paddle.remove();
+	}
+
+	public float getWidth()
+	{
+		return paddleEnts.size() * WIDTH;
 	}
 }

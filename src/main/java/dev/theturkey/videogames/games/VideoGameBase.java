@@ -3,6 +3,7 @@ package dev.theturkey.videogames.games;
 import dev.theturkey.videogames.util.Vector2I;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 public abstract class VideoGameBase
@@ -32,4 +33,8 @@ public abstract class VideoGameBase
 	public abstract void startGame(World world, Player player);
 
 	public abstract void endGame(World world, Player player);
+
+	public abstract boolean isEntInGame(Entity entity);
+
+	public abstract void onEntityCollide(Entity entity);
 }

@@ -7,6 +7,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
@@ -18,12 +19,14 @@ public class BrickBreakerGame extends VideoGameBase
 	private Ball ball;
 	private int gameTick = -1;
 
+	//In world this is mirrored
 	private int[][] blocks = new int[][]{
-			{5, 4, 3, 2, 1, 2, 3, 4, 5},
-			{5, 4, 3, 2, 1, 2, 3, 4, 5},
-			{5, 4, 3, 2, 1, 2, 3, 4, 5},
-			{5, 4, 3, 2, 1, 2, 3, 4, 5},
-			{5, 4, 3, 2, 1, 2, 3, 4, 5}
+			{1, 2, 3, 4, 5, 4, 3, 2, 1},
+			{1, 2, 3, 4, 5, 4, 3, 2, 1},
+			{1, 2, 3, 4, 5, 4, 3, 2, 1},
+			{1, 2, 3, 4, 5, 4, 3, 2, 1},
+			{1, 2, 3, 4, 5, 4, 3, 2, 1},
+			{1, 2, 3, 4, 5, 4, 3, 2, 1}
 	};
 
 	public BrickBreakerGame(Vector2I gameLoc)
@@ -41,7 +44,7 @@ public class BrickBreakerGame extends VideoGameBase
 		player.teleport(new Location(world, gameLoc.getX() + 0.5, Y + 1, gameLoc.getY() + 0.5, 0, 0), PlayerTeleportEvent.TeleportCause.COMMAND);
 
 		paddle = new Paddle();
-		paddle.setWidth(8, world, gameLoc.getX(), Y - 4, gameLoc.getY() + 0.5 + DIST_FROM_PLAYER);
+		paddle.setWidth(4, world, gameLoc.getX(), Y - 4, gameLoc.getY() + 0.5 + DIST_FROM_PLAYER);
 
 		ball = new Ball(world, gameLoc.getX() + 0.5, Y - 4, gameLoc.getY() + 0.5 + DIST_FROM_PLAYER);
 
@@ -50,18 +53,11 @@ public class BrickBreakerGame extends VideoGameBase
 			for(int yy = -15; yy < 25; yy++)
 			{
 				world.getBlockAt(gameLoc.getX() + x, Y + yy, gameLoc.getY() + DIST_FROM_PLAYER + 1).setType(Material.BLACK_CONCRETE);
-				if(x >= -9)
-				{
-					int colIndex = (x + 9) / 2;
-					int rowIndex = (yy - 15) / 2;
-					if(yy - 13 > 0 && yy - 13 < 10 && yy % 2 == 0 && colIndex < blocks[rowIndex].length)
-					{
-						int hitPoints = blocks[rowIndex][colIndex];
-						world.getBlockAt(gameLoc.getX() + x, Y + yy, gameLoc.getY() + DIST_FROM_PLAYER).setType(getMatForHP(hitPoints));
-					}
-				}
+				if(x == -10 || x == 9 || yy == -15 || yy == 24)
+					world.getBlockAt(gameLoc.getX() + x, Y + yy, gameLoc.getY() + DIST_FROM_PLAYER).setType(Material.WHITE_CONCRETE);
 			}
 		}
+		updateBlocks(world);
 	}
 
 	public void startGame(World world, Player player)
@@ -71,6 +67,7 @@ public class BrickBreakerGame extends VideoGameBase
 			float yaw = player.getLocation().getYaw();
 			double newX = Math.max(-9, Math.min(9, (DIST_FROM_PLAYER * Math.tan(Math.toRadians(yaw))) - 0.5));
 			paddle.update(getGameLocScaled().getX() - newX);
+			ball.update(newX, paddle.getWidth());
 		}, 0, 1);
 	}
 
@@ -97,6 +94,45 @@ public class BrickBreakerGame extends VideoGameBase
 		}
 	}
 
+	@Override
+	public boolean isEntInGame(Entity entity)
+	{
+		return entity.equals(ball.getEntity());
+	}
+
+	@Override
+	public void onEntityCollide(Entity entity)
+	{
+		Vector2I gameLoc = getGameLocScaled();
+		Location entLoc = entity.getLocation().clone().subtract(new Location(entity.getWorld(), gameLoc.getX(), Y, gameLoc.getY()));
+		int col = (entLoc.getBlockX() + 9) / 2;
+		int row = (entLoc.getBlockY() - 12) / 2;
+		if(row < blocks.length && col < blocks[row].length)
+		{
+			blocks[row][col]--;
+			updateBlocks(entity.getWorld());
+			ball.bounceY();
+		}
+	}
+
+	public void updateBlocks(World world)
+	{
+		Vector2I gameLoc = getGameLocScaled();
+		for(int x = -9; x < 10; x++)
+		{
+			for(int yy = 12; yy < 23; yy++)
+			{
+				int colIndex = (x + 9) / 2;
+				int rowIndex = (yy - 12) / 2;
+				if(yy % 2 == 0 && colIndex < blocks[rowIndex].length)
+				{
+					int hitPoints = blocks[rowIndex][colIndex];
+					world.getBlockAt(gameLoc.getX() + x, Y + yy, gameLoc.getY() + DIST_FROM_PLAYER).setType(getMatForHP(hitPoints));
+				}
+			}
+		}
+	}
+
 	public Material getMatForHP(int hitPoints)
 	{
 		switch(hitPoints)
@@ -112,7 +148,7 @@ public class BrickBreakerGame extends VideoGameBase
 			case 5:
 				return Material.GREEN_CONCRETE;
 			default:
-				return Material.WHITE_CONCRETE;
+				return Material.AIR;
 		}
 	}
 }

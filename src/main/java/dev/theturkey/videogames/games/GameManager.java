@@ -3,6 +3,7 @@ package dev.theturkey.videogames.games;
 import dev.theturkey.videogames.games.brickbreaker.BrickBreakerGame;
 import dev.theturkey.videogames.util.Vector2I;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
@@ -88,4 +89,13 @@ public class GameManager
 		for(Player player : ACTIVE_GAMES.keySet())
 			leaveGame(player);
 	}
+
+	public static VideoGameBase getGameForEntity(Entity entity)
+	{
+		for(VideoGameBase vgb : ACTIVE_GAMES.values())
+			if(vgb.isEntInGame(entity))
+				return vgb;
+		return null;
+	}
+
 }
