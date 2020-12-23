@@ -30,15 +30,15 @@ public class Ball
 	public void update(double paddleX, float paddleWidth)
 	{
 		ballLoc.add(ballVel);
-		if(ballLoc.getX() > 9)
+		if(ballLoc.getX() > 8.5)
 		{
-			ballLoc.setX(ballLoc.getX() - (ballLoc.getX() - 9));
-			ballVel.setX(-ballVel.getX());
+			ballLoc.setX(8.5 - (ballLoc.getX() - 8.5));
+			ballVel.setX(-Math.abs(ballVel.getX()));
 		}
-		else if(ballLoc.getX() < -8)
+		else if(ballLoc.getX() < -8.5)
 		{
-			ballLoc.setX(ballLoc.getX() - (ballLoc.getX() + 9));
-			ballVel.setX(-ballVel.getX());
+			ballLoc.setX(-8.5 - (ballLoc.getX() + 8.5));
+			ballVel.setX(Math.abs(ballVel.getX()));
 		}
 
 		if(ballLoc.getY() > 28)
@@ -55,7 +55,6 @@ public class Ball
 		{
 			paddleCheck = true;
 			double xOff = (ballLoc.getX() - 0.5) - (paddleX - (paddleWidth / 2));
-			System.out.println(xOff);
 			if(xOff > 0 && xOff < paddleWidth)
 			{
 				bounceY();
@@ -79,7 +78,7 @@ public class Ball
 
 	public double getX()
 	{
-		return ballLoc.getX() + ballWorldOffset.getX();
+		return ballWorldOffset.getX() - ballLoc.getX();
 	}
 
 	public double getY()

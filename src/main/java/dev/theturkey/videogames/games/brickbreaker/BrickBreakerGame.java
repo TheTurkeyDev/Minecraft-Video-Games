@@ -107,7 +107,7 @@ public class BrickBreakerGame extends VideoGameBase
 		Location entLoc = entity.getLocation().clone().subtract(new Location(entity.getWorld(), gameLoc.getX(), Y, gameLoc.getY()));
 		int col = (entLoc.getBlockX() + 9) / 2;
 		int row = (entLoc.getBlockY() - 12) / 2;
-		if(row < blocks.length && col < blocks[row].length)
+		if(row >= 0 && row < blocks.length && col >= 0 && col < blocks[row].length)
 		{
 			blocks[row][col]--;
 			updateBlocks(entity.getWorld());
