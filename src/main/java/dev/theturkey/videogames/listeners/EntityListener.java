@@ -25,7 +25,6 @@ public class EntityListener implements Listener
 		VideoGameBase vgb = GameManager.getGameForEntity(e.getEntity());
 		if(vgb == null)
 			return;
-		System.out.println(e.getEntity().getLocation());
 		vgb.onEntityCollide(e.getEntity());
 		e.setCancelled(true);
 	}

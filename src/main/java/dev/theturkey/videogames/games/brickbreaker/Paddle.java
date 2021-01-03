@@ -1,5 +1,7 @@
 package dev.theturkey.videogames.games.brickbreaker;
 
+import dev.theturkey.videogames.VGCore;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
@@ -23,8 +25,11 @@ public class Paddle
 		for(int i = 0; i < ents; i++)
 		{
 			Location paddleLoc = new Location(world, (x - ((WIDTH * paddleEnts.size()) / 2)) + (WIDTH * i) + 0.5, y, z, 0, 0);
-			Minecart paddle = (Minecart) world.spawnEntity(paddleLoc, EntityType.MINECART);
+			Minecart paddle = (Minecart) world.spawnEntity(paddleLoc.clone().add(-10, -paddleLoc.getBlockY(), 0), EntityType.MINECART);
+			Bukkit.getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () -> paddle.teleport(paddleLoc), 5);
 			paddle.setGravity(false);
+
+			//paddle.setDisplayBlockData(Material.SLIME_BLOCK.createBlockData());
 
 			paddleEnts.add(paddle);
 		}

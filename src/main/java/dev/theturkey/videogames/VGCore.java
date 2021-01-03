@@ -1,6 +1,8 @@
 package dev.theturkey.videogames;
 
 
+import com.google.gson.JsonParser;
+import dev.theturkey.videogames.commands.GamesCommand;
 import dev.theturkey.videogames.commands.IVGCommand;
 import dev.theturkey.videogames.commands.LeaveCommand;
 import dev.theturkey.videogames.commands.PlayCommand;
@@ -20,6 +22,7 @@ import java.util.logging.Logger;
 
 public class VGCore extends JavaPlugin
 {
+	public static final JsonParser JSON_PARSER = new JsonParser();
 	public static final Logger log = Logger.getLogger("VG");
 
 	private static Map<String, IVGCommand> commands = new HashMap<>();
@@ -37,6 +40,7 @@ public class VGCore extends JavaPlugin
 		m.registerEvents(new PlayerListener(), this);
 		m.registerEvents(new EntityListener(), this);
 
+		commands.put("games", new GamesCommand());
 		commands.put("play", new PlayCommand());
 		commands.put("leave", new LeaveCommand());
 	}

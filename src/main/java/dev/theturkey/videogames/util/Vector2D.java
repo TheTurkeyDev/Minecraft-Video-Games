@@ -23,6 +23,12 @@ public class Vector2D
 		return y;
 	}
 
+	public void set(double x, double y)
+	{
+		setX(x);
+		setY(y);
+	}
+
 	public void setX(double x)
 	{
 		this.x = x;

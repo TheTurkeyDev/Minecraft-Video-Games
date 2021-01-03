@@ -26,6 +26,12 @@ public abstract class VideoGameBase
 		return new Vector2I(gameLoc.getX() * DIST_SCALE, gameLoc.getY() * DIST_SCALE);
 	}
 
+	public Location getPlayerLoc(World world)
+	{
+		Vector2I scaled = getGameLocScaled();
+		return new Location(world, scaled.getX() + 0.5, getYBase() + 1, scaled.getY() + 0.5, 0, 0);
+	}
+
 	public abstract void constructGame(World world, Player player);
 
 	public abstract void deconstructGame(World world, Player player);
@@ -37,4 +43,8 @@ public abstract class VideoGameBase
 	public abstract boolean isEntInGame(Entity entity);
 
 	public abstract void onEntityCollide(Entity entity);
+
+	public abstract void onPlayerJump();
+
+	public abstract int getYBase();
 }

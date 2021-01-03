@@ -2,12 +2,17 @@ package dev.theturkey.videogames.listeners;
 
 import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.games.GameManager;
+import dev.theturkey.videogames.games.VideoGameBase;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -29,6 +34,10 @@ public class PlayerListener implements Listener
 		{
 			e.getPlayer().teleport(GameManager.SPAWN, PlayerTeleportEvent.TeleportCause.COMMAND);
 			e.getPlayer().setWalkSpeed(0);
+			e.getPlayer().sendRawMessage(ChatColor.DARK_GREEN + "Hello! Welcome to this proof of concept, remake of video games, style server!");
+			e.getPlayer().sendRawMessage(ChatColor.AQUA + "Special thanks to Nodecraft for hosting this server!");
+			e.getPlayer().sendRawMessage(ChatColor.DARK_GREEN + "Use `/games` to get a list of games you can play!");
+			e.getPlayer().sendRawMessage(ChatColor.DARK_GREEN + "Use `/play <game name>` to play a game and `/leave` to leave");
 		}, 1);
 	}
 
@@ -41,9 +50,24 @@ public class PlayerListener implements Listener
 	@EventHandler
 	public void onPlayerMove(PlayerMoveEvent e)
 	{
-		if(e.getTo() != null && (e.getFrom().getX() != e.getTo().getX() || e.getFrom().getY() != e.getTo().getY() || e.getFrom().getZ() != e.getTo().getZ()))
+		VideoGameBase game = GameManager.getGameForPlayer(e.getPlayer());
+		if(game != null && e.getTo() != null && e.getFrom().getY() < e.getTo().getY())
+		{
+			game.onPlayerJump();
+		}
+
+		if(e.getPlayer().getGameMode().equals(GameMode.SURVIVAL) && e.getTo() != null && (e.getFrom().getX() != e.getTo().getX() || e.getFrom().getY() != e.getTo().getY() || e.getFrom().getZ() != e.getTo().getZ()))
 		{
 			e.getPlayer().setWalkSpeed(0);
+			e.setCancelled(true);
+		}
+	}
+
+	@EventHandler
+	public void onPlayerDamage(EntityDamageEvent e)
+	{
+		if(e.getEntity() instanceof Player)
+		{
 			e.setCancelled(true);
 		}
 	}

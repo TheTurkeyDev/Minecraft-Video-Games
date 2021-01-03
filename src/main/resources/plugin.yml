@@ -3,9 +3,12 @@ main: dev.theturkey.videogames.VGCore
 description: 'Remaking video games in Minecraft!'
 version: ${projectVersion}
 authors: [TurkeyDev]
+depend: ['ProtocolLib']
 api-version: '1.16'
 load: STARTUP
 commands:
+  games:
+    description: Get a list of available games
   play:
     description: Used to play a game
   leave:

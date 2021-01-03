@@ -1,8 +1,13 @@
 package dev.theturkey.videogames.games;
 
+import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.games.brickbreaker.BrickBreakerGame;
+import dev.theturkey.videogames.games.displaytest.DisplayTest;
 import dev.theturkey.videogames.util.Vector2I;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -29,7 +34,7 @@ public class GameManager
 
 		Vector2I gameLoc = null;
 
-		int xx = 0, zz = 0, dx = 0, dz = -1;
+		int xx = 0, zz = 0, dx = 128, dz = -1;
 		int t = 32;
 		int maxI = t * t;
 		for(int i = 0; i < maxI; i++)
@@ -57,15 +62,30 @@ public class GameManager
 				BrickBreakerGame bbgame = new BrickBreakerGame(gameLoc);
 				vGame = bbgame;
 				break;
+			case TEST:
+				DisplayTest displayTestgame = new DisplayTest(gameLoc);
+				vGame = displayTestgame;
+				break;
 			default:
 				player.sendRawMessage("Sorry that is not a valid game!");
 				return;
 		}
 
 		ACTIVE_GAMES.put(player, vGame);
-		vGame.constructGame(player.getWorld(), player);
 
-		vGame.startGame(player.getWorld(), player);
+		World world = player.getWorld();
+		Vector2I gameLocSale = vGame.getGameLocScaled();
+		world.getBlockAt(new Location(world, gameLocSale.getX(), vGame.getYBase(), gameLocSale.getY())).setType(Material.BEDROCK);
+
+		Location playerLoc = new Location(world, gameLocSale.getX() + 0.5, vGame.getYBase() + 1, gameLocSale.getY() + 0.5, 0, 0);
+		player.teleport(playerLoc, PlayerTeleportEvent.TeleportCause.COMMAND);
+
+		Bukkit.getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () ->
+		{
+			vGame.constructGame(player.getWorld(), player);
+			vGame.startGame(player.getWorld(), player);
+		}, 10);
+
 	}
 
 	public static void leaveGame(Player player)
@@ -88,6 +108,11 @@ public class GameManager
 	{
 		for(Player player : ACTIVE_GAMES.keySet())
 			leaveGame(player);
+	}
+
+	public static VideoGameBase getGameForPlayer(Player player)
+	{
+		return ACTIVE_GAMES.get(player);
 	}
 
 	public static VideoGameBase getGameForEntity(Entity entity)

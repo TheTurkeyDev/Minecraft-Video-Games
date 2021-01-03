@@ -12,16 +12,15 @@ public class Ball
 	private Vector2D ballLoc;
 	private Vector2D ballVel;
 	private Slime ballEnt;
-	private double paddleY;
 	private boolean paddleCheck = false;
 
 	public Ball(World world, double x, double y, double z)
 	{
-		this.paddleY = y;
 		ballWorldOffset = new Vector2D(x, y);
-		ballLoc = new Vector2D(0, 0);
-		ballVel = new Vector2D(0, 0.5);
-		ballEnt = (Slime) world.spawnEntity(new Location(world, ballWorldOffset.getX(), ballWorldOffset.getY(), z), EntityType.SLIME);
+		ballLoc = new Vector2D(0.5, 0.75);
+		ballVel = new Vector2D(0, 0);
+		Location startLoc = new Location(world, ballWorldOffset.getX(), ballWorldOffset.getY(), z);
+		ballEnt = (Slime) world.spawnEntity(startLoc.clone().add(-10, 0, 0), EntityType.SLIME);
 		ballEnt.setSize(1);
 		ballEnt.setAI(false);
 		ballEnt.setGravity(false);
@@ -30,31 +29,26 @@ public class Ball
 	public void update(double paddleX, float paddleWidth)
 	{
 		ballLoc.add(ballVel);
-		if(ballLoc.getX() > 8.5)
+		if(getGameX() > 8.5)
 		{
-			ballLoc.setX(8.5 - (ballLoc.getX() - 8.5));
+			ballLoc.setX(8.5 - (getGameX() - 8.5));
 			ballVel.setX(-Math.abs(ballVel.getX()));
 		}
-		else if(ballLoc.getX() < -8.5)
+		else if(getGameX() < -8.5)
 		{
-			ballLoc.setX(-8.5 - (ballLoc.getX() + 8.5));
+			ballLoc.setX(-8.5 - (getGameX() + 8.5));
 			ballVel.setX(Math.abs(ballVel.getX()));
 		}
 
-		if(ballLoc.getY() > 28)
+		if(getGameY() > 28)
 		{
-			ballLoc.setY(ballLoc.getY() - (ballLoc.getY() - 28));
+			ballLoc.setY(getGameY() - (getGameY() - 28));
 			bounceY();
 		}
-		else if(ballLoc.getY() < -3)
-		{
-			ballLoc.setY(ballLoc.getY() - (ballLoc.getY() + 3));
-			bounceY();
-		}
-		else if(!paddleCheck && getY() < (paddleY + 0.75f))
+		else if(!paddleCheck && getGameY() < 0.75f)
 		{
 			paddleCheck = true;
-			double xOff = (ballLoc.getX() - 0.5) - (paddleX - (paddleWidth / 2));
+			double xOff = (getGameX() - 0.5) - (paddleX - (paddleWidth / 2));
 			if(xOff > 0 && xOff < paddleWidth)
 			{
 				bounceY();
@@ -63,9 +57,14 @@ public class Ball
 			}
 		}
 
+		updateLoc();
+	}
+
+	public void updateLoc()
+	{
 		Location loc = ballEnt.getLocation().clone();
-		loc.setX(getX());
-		loc.setY(getY());
+		loc.setX(getWorldX());
+		loc.setY(getWorldY());
 		ballEnt.teleport(loc);
 	}
 
@@ -76,14 +75,39 @@ public class Ball
 			paddleCheck = false;
 	}
 
-	public double getX()
+	public void setGameX(double x)
 	{
-		return ballWorldOffset.getX() - ballLoc.getX();
+		this.ballLoc.setX(x);
 	}
 
-	public double getY()
+	public void setGameY(double y)
 	{
-		return ballLoc.getY() + ballWorldOffset.getY();
+		this.ballLoc.setY(y);
+	}
+
+	public void setVelocity(double x, double y)
+	{
+		this.ballVel.set(x, y);
+	}
+
+	public double getWorldX()
+	{
+		return ballWorldOffset.getX() - getGameX();
+	}
+
+	public double getWorldY()
+	{
+		return ballWorldOffset.getY() + getGameY();
+	}
+
+	public double getGameY()
+	{
+		return ballLoc.getY();
+	}
+
+	public double getGameX()
+	{
+		return ballLoc.getX();
 	}
 
 	public Slime getEntity()
