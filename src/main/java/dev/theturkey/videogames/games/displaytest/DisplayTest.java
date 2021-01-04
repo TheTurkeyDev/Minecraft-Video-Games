@@ -107,6 +107,7 @@ public class DisplayTest extends VideoGameBase
 	@Override
 	public void startGame(World world, Player player)
 	{
+		super.startGame(world, player);
 		gameTick = Bukkit.getScheduler().scheduleSyncRepeatingTask(VGCore.getPlugin(), () ->
 		{
 
@@ -130,6 +131,7 @@ public class DisplayTest extends VideoGameBase
 	@Override
 	public void endGame(World world, Player player)
 	{
+		super.endGame(world, player);
 		Bukkit.getScheduler().cancelTask(gameTick);
 	}
 

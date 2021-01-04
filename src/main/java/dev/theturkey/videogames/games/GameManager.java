@@ -13,13 +13,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class GameManager
 {
-	public static final Location SPAWN = new Location(null, 0.5, 255, 0.5, 0, 0);
+	private static final Location SPAWN = new Location(null, 0.5, 255, 0.5, 0, 0);
+	public static final List<String> GAMES = Arrays.asList("brickbreaker");
 
 	private static final List<Vector2I> ACTIVE_GAME_LOCS = new ArrayList<>();
 	private static final Map<Player, VideoGameBase> ACTIVE_GAMES = new HashMap<>();
@@ -96,12 +98,18 @@ public class GameManager
 			return;
 		}
 
-		SPAWN.setWorld(player.getWorld());
-		player.teleport(SPAWN, PlayerTeleportEvent.TeleportCause.COMMAND);
+		sendPlayerToSpawn(player);
 		VideoGameBase game = ACTIVE_GAMES.remove(player);
 		game.endGame(player.getWorld(), player);
 		ACTIVE_GAME_LOCS.remove(game.getGameLoc());
 		game.deconstructGame(player.getWorld(), player);
+	}
+
+	public static void sendPlayerToSpawn(Player player)
+	{
+		SPAWN.setWorld(player.getWorld());
+		player.teleport(SPAWN, PlayerTeleportEvent.TeleportCause.COMMAND);
+		player.setInvisible(true);
 	}
 
 	public static void reset()

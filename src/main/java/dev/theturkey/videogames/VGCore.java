@@ -16,6 +16,7 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -43,6 +44,7 @@ public class VGCore extends JavaPlugin
 		commands.put("games", new GamesCommand());
 		commands.put("play", new PlayCommand());
 		commands.put("leave", new LeaveCommand());
+		getCommand("play").setTabCompleter((commandSender, command, s, strings) -> GameManager.GAMES);
 	}
 
 	@Override

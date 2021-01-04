@@ -24,7 +24,6 @@ public class PlayerListener implements Listener
 	public void onPlayerLogin(PlayerLoginEvent e)
 	{
 		World world = e.getPlayer().getWorld();
-		GameManager.SPAWN.setWorld(world);
 
 		for(int x = -1; x < 2; x++)
 			for(int z = -1; z < 2; z++)
@@ -32,7 +31,8 @@ public class PlayerListener implements Listener
 
 		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () ->
 		{
-			e.getPlayer().teleport(GameManager.SPAWN, PlayerTeleportEvent.TeleportCause.COMMAND);
+			e.getPlayer().setInvisible(true);
+			GameManager.sendPlayerToSpawn(e.getPlayer());
 			e.getPlayer().setWalkSpeed(0);
 			e.getPlayer().sendRawMessage(ChatColor.DARK_GREEN + "Hello! Welcome to this proof of concept, remake of video games, style server!");
 			e.getPlayer().sendRawMessage(ChatColor.AQUA + "Special thanks to Nodecraft for hosting this server!");

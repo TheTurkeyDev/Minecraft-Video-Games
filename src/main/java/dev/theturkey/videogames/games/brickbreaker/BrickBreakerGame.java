@@ -75,9 +75,12 @@ public class BrickBreakerGame extends VideoGameBase
 	@Override
 	public void startGame(World world, Player player)
 	{
+		super.startGame(world, player);
 		lives = 3;
 		level = 0;
 		nextLevel(world);
+
+		player.sendRawMessage(ChatColor.GREEN + "Jump to start!");
 
 		gameTick = Bukkit.getScheduler().scheduleSyncRepeatingTask(VGCore.getPlugin(), () ->
 		{
@@ -101,8 +104,8 @@ public class BrickBreakerGame extends VideoGameBase
 					{
 						endGame(world, player);
 						deconstructGame(world, player);
-						player.sendRawMessage("You Lost!");
-						player.sendRawMessage("You made it to level " + level + "!");
+						player.sendRawMessage(ChatColor.RED + "You Lost!");
+						player.sendRawMessage(ChatColor.RED + "You made it to level " + level + "!");
 					}
 					else
 					{
@@ -120,6 +123,7 @@ public class BrickBreakerGame extends VideoGameBase
 	@Override
 	public void endGame(World world, Player player)
 	{
+		super.endGame(world, player);
 		Bukkit.getScheduler().cancelTask(gameTick);
 	}
 

@@ -20,7 +20,7 @@ public class Ball
 		ballLoc = new Vector2D(0.5, 0.75);
 		ballVel = new Vector2D(0, 0);
 		Location startLoc = new Location(world, ballWorldOffset.getX(), ballWorldOffset.getY(), z);
-		ballEnt = (Slime) world.spawnEntity(startLoc.clone().add(-10, 0, 0), EntityType.SLIME);
+		ballEnt = (Slime) world.spawnEntity(startLoc, EntityType.SLIME);
 		ballEnt.setSize(1);
 		ballEnt.setAI(false);
 		ballEnt.setGravity(false);

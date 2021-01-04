@@ -36,9 +36,15 @@ public abstract class VideoGameBase
 
 	public abstract void deconstructGame(World world, Player player);
 
-	public abstract void startGame(World world, Player player);
+	public void startGame(World world, Player player)
+	{
+		player.setInvisible(false);
+	}
 
-	public abstract void endGame(World world, Player player);
+	public void endGame(World world, Player player)
+	{
+		GameManager.sendPlayerToSpawn(player);
+	}
 
 	public abstract boolean isEntInGame(Entity entity);
 
