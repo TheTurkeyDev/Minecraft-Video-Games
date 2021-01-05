@@ -2,15 +2,17 @@ package dev.theturkey.videogames.util;
 
 import java.util.Objects;
 
-public class Vector2I
+public class Vector3I
 {
 	private int x;
 	private int y;
+	private int z;
 
-	public Vector2I(int x, int y)
+	public Vector3I(int x, int y, int z)
 	{
 		this.x = x;
 		this.y = y;
+		this.z = z;
 	}
 
 	public int getX()
@@ -23,10 +25,16 @@ public class Vector2I
 		return y;
 	}
 
-	public Vector2I add(int x, int y)
+	public int getZ()
+	{
+		return z;
+	}
+
+	public Vector3I add(int x, int y, int z)
 	{
 		this.x += x;
 		this.y += y;
+		this.z += z;
 		return this;
 	}
 
@@ -38,13 +46,13 @@ public class Vector2I
 		if(o == null || getClass() != o.getClass())
 			return false;
 
-		Vector2I vector2I = (Vector2I) o;
-		return x == vector2I.x && y == vector2I.y;
+		Vector3I vector2I = (Vector3I) o;
+		return x == vector2I.x && y == vector2I.y && z == vector2I.z;
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(x, y);
+		return Objects.hash(x, y, z);
 	}
 }

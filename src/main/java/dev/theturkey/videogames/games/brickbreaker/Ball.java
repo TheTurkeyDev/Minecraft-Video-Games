@@ -8,6 +8,7 @@ import org.bukkit.entity.Slime;
 
 public class Ball
 {
+	private static final double RIGHT_WALL_BOUNCE = BrickBreakerGame.WIDTH - 1.25;
 	private Vector2D ballWorldOffset;
 	private Vector2D ballLoc;
 	private Vector2D ballVel;
@@ -17,35 +18,35 @@ public class Ball
 	public Ball(World world, double x, double y, double z)
 	{
 		ballWorldOffset = new Vector2D(x, y);
-		ballLoc = new Vector2D(0.5, 0.75);
+		ballLoc = new Vector2D((BrickBreakerGame.WIDTH / 2d) - 0.5, BrickBreakerGame.PADDLE_Y + 0.75);
 		ballVel = new Vector2D(0, 0);
-		Location startLoc = new Location(world, ballWorldOffset.getX(), ballWorldOffset.getY(), z);
+		Location startLoc = new Location(world, getWorldX(), getWorldY(), z);
 		ballEnt = (Slime) world.spawnEntity(startLoc, EntityType.SLIME);
 		ballEnt.setSize(1);
 		ballEnt.setAI(false);
 		ballEnt.setGravity(false);
 	}
 
-	public void update(double paddleX, float paddleWidth)
+	public boolean update(double paddleX, float paddleWidth)
 	{
 		ballLoc.add(ballVel);
-		if(getGameX() > 8.5)
+		if(getGameX() > RIGHT_WALL_BOUNCE)
 		{
-			ballLoc.setX(8.5 - (getGameX() - 8.5));
+			ballLoc.setX(RIGHT_WALL_BOUNCE - (getGameX() - RIGHT_WALL_BOUNCE));
 			ballVel.setX(-Math.abs(ballVel.getX()));
 		}
-		else if(getGameX() < -8.5)
+		else if(getGameX() < 1.25)
 		{
-			ballLoc.setX(-8.5 - (getGameX() + 8.5));
+			ballLoc.setX(Math.abs(getGameX()));
 			ballVel.setX(Math.abs(ballVel.getX()));
 		}
 
-		if(getGameY() > 28)
+		if(getGameY() > BrickBreakerGame.HEIGHT - 2)
 		{
-			ballLoc.setY(getGameY() - (getGameY() - 28));
+			ballLoc.setY(getGameY() - (getGameY() - (BrickBreakerGame.HEIGHT - 2)));
 			bounceY();
 		}
-		else if(!paddleCheck && getGameY() < 0.75f)
+		else if(!paddleCheck && getGameY() < BrickBreakerGame.PADDLE_Y + 0.75f)
 		{
 			paddleCheck = true;
 			double xOff = (getGameX() - 0.5) - (paddleX - (paddleWidth / 2));
@@ -54,10 +55,13 @@ public class Ball
 				bounceY();
 				double xChange = 8 * Math.pow((xOff / paddleWidth) - 0.5, 3);
 				ballVel.setX(ballVel.getX() + xChange);
+				updateLoc();
+				return true;
 			}
 		}
 
 		updateLoc();
+		return false;
 	}
 
 	public void updateLoc()

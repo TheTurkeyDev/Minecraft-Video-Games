@@ -1,8 +1,7 @@
 package dev.theturkey.videogames.games.brickbreaker;
 
-import dev.theturkey.videogames.VGCore;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Minecart;
@@ -15,34 +14,38 @@ public class Paddle
 	private static final float WIDTH = 1.1f;
 	private List<Minecart> paddleEnts;
 
+	private double worldX;
+	private double worldZ;
+
 	public Paddle()
 	{
 	}
 
 	public void setWidth(int ents, World world, double x, double y, double z)
 	{
+		this.worldX = x;
+		this.worldZ = z;
 		paddleEnts = new ArrayList<>();
 		for(int i = 0; i < ents; i++)
 		{
-			Location paddleLoc = new Location(world, (x - ((WIDTH * paddleEnts.size()) / 2)) + (WIDTH * i) + 0.5, y, z, 0, 0);
-			Minecart paddle = (Minecart) world.spawnEntity(paddleLoc.clone().add(-10, -paddleLoc.getBlockY(), 0), EntityType.MINECART);
-			Bukkit.getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () -> paddle.teleport(paddleLoc), 5);
+			Location paddleLoc = new Location(world, (worldX - (BrickBreakerGame.WIDTH / 2d) - ((WIDTH * i) - (ents / 2d))), y + BrickBreakerGame.PADDLE_Y, z, 0, 0);
+			Minecart paddle = (Minecart) world.spawnEntity(paddleLoc, EntityType.MINECART);
 			paddle.setGravity(false);
-
-			//paddle.setDisplayBlockData(Material.SLIME_BLOCK.createBlockData());
 
 			paddleEnts.add(paddle);
 		}
-		update(x);
+		update(this.worldX - (BrickBreakerGame.WIDTH / 2d));
 	}
 
 	public void update(double centerX)
 	{
+		centerX = worldX - centerX;
 		for(int i = 0; i < paddleEnts.size(); i++)
 		{
 			Minecart paddle = paddleEnts.get(i);
 			Location newLoc = paddle.getLocation().clone();
-			newLoc.setX((centerX - ((WIDTH * paddleEnts.size()) / 2)) + (WIDTH * i) + 0.5);
+			newLoc.setX(centerX - ((WIDTH * i) - (getWidth() / 2)));
+			newLoc.setZ(worldZ);
 			paddle.teleport(newLoc);
 		}
 	}
@@ -56,5 +59,11 @@ public class Paddle
 	public float getWidth()
 	{
 		return paddleEnts.size() * WIDTH;
+	}
+
+	public void setContainedBlock(Material mat)
+	{
+		for(Minecart paddle : paddleEnts)
+			paddle.setDisplayBlockData(mat.createBlockData());
 	}
 }

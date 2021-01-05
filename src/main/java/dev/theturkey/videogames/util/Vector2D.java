@@ -45,6 +45,12 @@ public class Vector2D
 		this.y += vec.y;
 	}
 
+	public void add(double x, double y)
+	{
+		this.x += x;
+		this.y += y;
+	}
+
 	@Override
 	public boolean equals(Object o)
 	{

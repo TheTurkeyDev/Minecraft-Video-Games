@@ -4,6 +4,7 @@ import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.games.brickbreaker.BrickBreakerGame;
 import dev.theturkey.videogames.games.displaytest.DisplayTest;
 import dev.theturkey.videogames.util.Vector2I;
+import dev.theturkey.videogames.util.Vector3I;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -75,11 +76,12 @@ public class GameManager
 
 		ACTIVE_GAMES.put(player, vGame);
 
+		double halfWidth = vGame.getWidth() / 2d;
 		World world = player.getWorld();
-		Vector2I gameLocSale = vGame.getGameLocScaled();
-		world.getBlockAt(new Location(world, gameLocSale.getX(), vGame.getYBase(), gameLocSale.getY())).setType(Material.BEDROCK);
+		Vector3I gameLocSale = vGame.getGameLocScaled();
+		world.getBlockAt(new Location(world, gameLocSale.getX() + halfWidth, vGame.getYBase(), gameLocSale.getZ())).setType(Material.BEDROCK);
 
-		Location playerLoc = new Location(world, gameLocSale.getX() + 0.5, vGame.getYBase() + 1, gameLocSale.getY() + 0.5, 0, 0);
+		Location playerLoc = new Location(world, gameLocSale.getX() + halfWidth + 0.5, vGame.getYBase() + 1, gameLocSale.getZ() + 0.5, 0, 0);
 		player.teleport(playerLoc, PlayerTeleportEvent.TeleportCause.COMMAND);
 
 		Bukkit.getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () ->
@@ -98,10 +100,16 @@ public class GameManager
 			return;
 		}
 
+		World world = player.getWorld();
+
 		sendPlayerToSpawn(player);
 		VideoGameBase game = ACTIVE_GAMES.remove(player);
 		game.endGame(player.getWorld(), player);
 		ACTIVE_GAME_LOCS.remove(game.getGameLoc());
+
+
+		Vector3I gameLocSale = game.getGameLocScaled();
+		world.getBlockAt(new Location(world, gameLocSale.getX() + (game.getWidth() / 2d), game.getYBase(), gameLocSale.getZ())).setType(Material.AIR);
 		game.deconstructGame(player.getWorld(), player);
 	}
 

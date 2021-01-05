@@ -9,6 +9,7 @@ import dev.theturkey.videogames.packetwrappers.WrapperPlayServerEntityEquipment;
 import dev.theturkey.videogames.packetwrappers.WrapperPlayServerEntityMetadata;
 import dev.theturkey.videogames.packetwrappers.WrapperPlayServerSpawnEntity;
 import dev.theturkey.videogames.util.Vector2I;
+import dev.theturkey.videogames.util.Vector3I;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -25,6 +26,7 @@ import java.util.UUID;
 
 public class DisplayTest extends VideoGameBase
 {
+	private static final int Y_BASE = 150;
 	private static final int WIDTH = 70;
 	private static final int HEIGHT = 50;
 	private static final float BLOCK_WIDTH = 0.6f;
@@ -36,7 +38,7 @@ public class DisplayTest extends VideoGameBase
 
 	public DisplayTest(Vector2I gameLoc)
 	{
-		super(gameLoc);
+		super(gameLoc, new Vector3I(gameLoc.getX(), Y_BASE, gameLoc.getY()));
 	}
 
 	@Override
@@ -82,7 +84,7 @@ public class DisplayTest extends VideoGameBase
 	@Override
 	public void deconstructGame(World world, Player player)
 	{
-		Vector2I gameLoc = getGameLocScaled();
+		Vector3I gameLoc = getGameLocScaled();
 		world.getBlockAt(new Location(world, gameLoc.getX(), 49, gameLoc.getY())).setType(Material.AIR);
 
 		int[] ents = new int[WIDTH * HEIGHT];
@@ -156,6 +158,18 @@ public class DisplayTest extends VideoGameBase
 	@Override
 	public int getYBase()
 	{
-		return 150;
+		return Y_BASE;
+	}
+
+	@Override
+	public int getWidth()
+	{
+		return 75;
+	}
+
+	@Override
+	public int getHeight()
+	{
+		return 50;
 	}
 }
