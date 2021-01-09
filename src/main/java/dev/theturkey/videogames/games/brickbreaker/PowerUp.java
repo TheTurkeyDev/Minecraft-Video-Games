@@ -3,12 +3,13 @@ package dev.theturkey.videogames.games.brickbreaker;
 import dev.theturkey.videogames.util.Vector2D;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Silverfish;
+import org.bukkit.inventory.ItemStack;
 
 public class PowerUp
 {
-	public Silverfish powerUpEnt;
+	public ArmorStand powerUpEnt;
 	public PowerUpEnum powerUpType;
 
 	private Vector2D powerUpWorldOffset;
@@ -19,10 +20,12 @@ public class PowerUp
 		this.powerUpType = powerUpType;
 		powerUpWorldOffset = new Vector2D(x, y);
 		powerUpLoc = new Vector2D((BrickBreakerGame.WIDTH - gameX) + 0.5, gameY);
-		Location startLoc = new Location(world, getWorldX(), getWorldY(), z, 90, 0);
-		powerUpEnt = (Silverfish) world.spawnEntity(startLoc, EntityType.SILVERFISH);
+		Location startLoc = new Location(world, getWorldX(), getWorldY() - 0.5f, z, 0, 0);
+		powerUpEnt = (ArmorStand) world.spawnEntity(startLoc, EntityType.ARMOR_STAND);
 		powerUpEnt.setAI(false);
+		powerUpEnt.getEquipment().setHelmet(new ItemStack(powerUpType.getPowerUpMat()));
 		powerUpEnt.setInvulnerable(true);
+		powerUpEnt.setInvisible(true);
 		powerUpEnt.setGravity(false);
 	}
 
@@ -31,10 +34,9 @@ public class PowerUp
 		powerUpLoc.add(0, -.1);
 		updateLoc();
 
-		System.out.println(getGameX() + "  " + (paddleX - (paddleWidth / 2)));
 		if(getGameY() < BrickBreakerGame.PADDLE_Y && getGameY() > BrickBreakerGame.PADDLE_Y - 1.5)
 		{
-			double xOff = (getGameX() - 0.5) - (paddleX - (paddleWidth / 2));
+			double xOff = (getGameX() + 0.5) - (paddleX - (paddleWidth / 2));
 			return xOff > 0 && xOff < paddleWidth;
 		}
 		return false;

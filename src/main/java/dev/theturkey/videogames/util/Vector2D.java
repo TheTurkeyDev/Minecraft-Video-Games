@@ -7,6 +7,12 @@ public class Vector2D
 	private double x;
 	private double y;
 
+	public Vector2D(Vector2D vec)
+	{
+		this.x = vec.getX();
+		this.y = vec.getY();
+	}
+
 	public Vector2D(double x, double y)
 	{
 		this.x = x;
@@ -45,10 +51,11 @@ public class Vector2D
 		this.y += vec.y;
 	}
 
-	public void add(double x, double y)
+	public Vector2D add(double x, double y)
 	{
 		this.x += x;
 		this.y += y;
+		return this;
 	}
 
 	@Override

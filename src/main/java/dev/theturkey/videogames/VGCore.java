@@ -16,13 +16,15 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.logging.Logger;
 
 public class VGCore extends JavaPlugin
 {
+	public static final Random RAND = new Random();
 	public static final JsonParser JSON_PARSER = new JsonParser();
 	public static final Logger log = Logger.getLogger("VG");
 
@@ -44,7 +46,7 @@ public class VGCore extends JavaPlugin
 		commands.put("games", new GamesCommand());
 		commands.put("play", new PlayCommand());
 		commands.put("leave", new LeaveCommand());
-		getCommand("play").setTabCompleter((commandSender, command, s, strings) -> GameManager.GAMES);
+		getCommand("play").setTabCompleter((commandSender, command, s, strings) -> new ArrayList<>(GameManager.GAMES.keySet()));
 	}
 
 	@Override

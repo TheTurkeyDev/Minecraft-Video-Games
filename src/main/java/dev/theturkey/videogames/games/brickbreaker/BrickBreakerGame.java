@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.games.GameManager;
 import dev.theturkey.videogames.games.VideoGameBase;
+import dev.theturkey.videogames.games.VideoGamesEnum;
+import dev.theturkey.videogames.leaderboard.LeaderBoardManager;
 import dev.theturkey.videogames.util.Hologram;
 import dev.theturkey.videogames.util.Vector2I;
 import dev.theturkey.videogames.util.Vector3I;
@@ -32,16 +34,18 @@ public class BrickBreakerGame extends VideoGameBase
 	public static int HEIGHT = 40;
 	private static final int Y_BASE = 75;
 	private static final int DIST_FROM_PLAYER = 30;
-	private boolean ballGrabbed;
+
 	private Paddle paddle;
-	private Ball ball;
+	private List<Ball> balls = new ArrayList<>();
 	private List<PowerUp> fallingPowerUps = new ArrayList<>();
 	private Map<PowerUpEnum, Integer> powerUpTimers = new HashMap<>();
 	private Hologram healthHologram;
 	private Hologram levelHologram;
+	private Hologram scoreHologram;
 	private int gameTick = -1;
 	private int lives = 3;
 	private int level = 0;
+	private int score = 0;
 
 	//In world this is mirrored
 	private int[][] blocks = new int[][]{
@@ -63,15 +67,13 @@ public class BrickBreakerGame extends VideoGameBase
 	{
 		Vector3I worldLoc = getGameLocScaled();
 
-		paddle = new Paddle();
-		paddle.setWidth(4, world, worldLoc.getX() + getWidth(), worldLoc.getY(), worldLoc.getZ() + 0.5 + DIST_FROM_PLAYER);
-
-		ballGrabbed = true;
-		ball = new Ball(world, worldLoc.getX() + getWidth(), worldLoc.getY(), worldLoc.getZ() + 0.5 + DIST_FROM_PLAYER);
+		paddle = new Paddle(world, worldLoc.getX() + getWidth(), worldLoc.getY(), worldLoc.getZ() + 0.5 + DIST_FROM_PLAYER);
+		balls.add(new Ball(world, worldLoc.getX() + getWidth(), worldLoc.getY(), worldLoc.getZ() + 0.5 + DIST_FROM_PLAYER));
 
 		Location playerLoc = getPlayerLoc(world);
 		healthHologram = new Hologram(world, playerLoc.clone().add(3, -2, 5), ChatColor.RED + "LIVES: \u2665\u2665\u2665");
 		levelHologram = new Hologram(world, playerLoc.clone().add(-3, -2, 5), ChatColor.RED + "Level: " + level);
+		scoreHologram = new Hologram(world, playerLoc.clone().add(-3, -1.5, 5), ChatColor.RED + "Score: " + score);
 
 		for(int x = 0; x < getWidth(); x++)
 		{
@@ -90,7 +92,11 @@ public class BrickBreakerGame extends VideoGameBase
 		super.startGame(world, player);
 		lives = 3;
 		level = 0;
+		score = 0;
 		powerUpTimers.put(PowerUpEnum.STICKY_PADDLE, 0);
+		powerUpTimers.put(PowerUpEnum.MULTI_BALL, 0);
+		powerUpTimers.put(PowerUpEnum.PADDLE_GROW, 0);
+		powerUpTimers.put(PowerUpEnum.PADDLE_SHRINK, 0);
 		nextLevel(world);
 
 		player.sendRawMessage(ChatColor.GREEN + "Jump to start!");
@@ -126,38 +132,54 @@ public class BrickBreakerGame extends VideoGameBase
 					fallingPowerUps.remove(i);
 				}
 			}
-			if(ballGrabbed)
+			for(int i = balls.size() - 1; i >= 0; i--)
 			{
-				ball.setGameX(newX - 0.5);
-				ball.updateLoc();
-			}
-			else
-			{
-				boolean bounced = ball.update(newX, paddle.getWidth());
-				if(bounced && powerUpTimers.get(PowerUpEnum.STICKY_PADDLE) > 0)
+				Ball ball = balls.get(i);
+				if(ball.isBallGrabbed())
 				{
-					ball.setVelocity(0, 0);
-					ball.setGameY(PADDLE_Y + 0.75);
-					ballGrabbed = true;
+					ball.setGameX(newX - 0.5);
+					ball.updateLoc();
 				}
-				else if(ball.getGameY() < 2)
+				else
 				{
-					ball.setVelocity(0, 0);
-					ball.setGameY(PADDLE_Y + 0.75);
-					lives--;
-					if(lives == 0)
+					boolean bounced = ball.update(newX, paddle.getWidth());
+					if(bounced && powerUpTimers.get(PowerUpEnum.STICKY_PADDLE) > 0)
 					{
-						player.sendRawMessage(ChatColor.RED + "You Lost!");
-						player.sendRawMessage(ChatColor.RED + "You made it to level " + level + "!");
-						GameManager.leaveGame(player);
+						ball.setVelocity(0, 0);
+						ball.setGameY(PADDLE_Y + 0.75);
+						ball.setBallGrabbed(true);
 					}
-					else
+					else if(ball.getGameY() < 2)
 					{
-						StringBuilder builder = new StringBuilder(ChatColor.RED.toString()).append("LIVES: ");
-						for(int i = 0; i < lives; i++)
-							builder.append("\u2665");
-						healthHologram.setText(builder.toString());
-						ballGrabbed = true;
+						if(balls.size() > 1)
+						{
+							ball.remove();
+							balls.remove(i);
+						}
+						else
+						{
+							ball.setVelocity(0, 0);
+							ball.setGameY(PADDLE_Y + 0.75);
+							lives--;
+							if(lives == 0)
+							{
+								player.sendRawMessage(ChatColor.RED + "You Lost!");
+								player.sendRawMessage(ChatColor.RED + "You made it to level " + level + "!");
+								player.sendRawMessage(ChatColor.RED + "Score: " + score);
+								Thread t = new Thread(() -> LeaderBoardManager.addScore(player, score, VideoGamesEnum.BRICK_BREAKER));
+								t.start();
+
+								GameManager.leaveGame(player);
+							}
+							else
+							{
+								StringBuilder builder = new StringBuilder(ChatColor.RED.toString()).append("LIVES: ");
+								for(int j = 0; j < lives; j++)
+									builder.append("\u2665");
+								healthHologram.setText(builder.toString());
+								ball.setBallGrabbed(true);
+							}
+						}
 					}
 				}
 			}
@@ -176,9 +198,12 @@ public class BrickBreakerGame extends VideoGameBase
 	{
 		Vector3I gameLoc = getGameLocScaled();
 		paddle.remove();
-		ball.remove();
+		for(Ball ball : balls)
+			ball.remove();
+		balls.clear();
 		healthHologram.remove();
 		levelHologram.remove();
+		scoreHologram.remove();
 		for(PowerUp powerUp : fallingPowerUps)
 			powerUp.remove();
 		fallingPowerUps.clear();
@@ -196,17 +221,35 @@ public class BrickBreakerGame extends VideoGameBase
 	@Override
 	public boolean isEntInGame(Entity entity)
 	{
-		return entity.equals(ball.getEntity());
+		for(Ball ball : balls)
+			if(entity.equals(ball.getEntity()))
+				return true;
+		return false;
 	}
 
 	@Override
 	public void onPlayerJump()
 	{
-		if(ballGrabbed)
+		for(Ball ball : balls)
 		{
-			ball.setVelocity(0, 0.5);
-			ballGrabbed = false;
+			if(ball.isBallGrabbed())
+			{
+				ball.setVelocity(0, 0.5);
+				ball.setBallGrabbed(false);
+			}
 		}
+	}
+
+	@Override
+	public void playerLeftClick(Player player)
+	{
+
+	}
+
+	@Override
+	public void playerRightClick(Player player)
+	{
+
 	}
 
 	@Override
@@ -231,20 +274,47 @@ public class BrickBreakerGame extends VideoGameBase
 		Vector3I gameLoc = getGameLocScaled();
 		Location entLoc = entity.getLocation().clone().subtract(new Location(entity.getWorld(), gameLoc.getX(), gameLoc.getY(), gameLoc.getZ()));
 		int col = ((entLoc.getBlockX() - 1) / 2);
-		int row = (entLoc.getBlockY() - (getHeight() - 12)) / 2;
+		int row = (entLoc.getBlockY() - (getHeight() - 14)) / 2;
 		if(row >= 0 && row < blocks.length && col >= 0 && col < blocks[row].length && blocks[row][col] != 0)
 		{
 			blocks[row][col]--;
+			givePoints(5);
 			if(blocks[row][col] == 0)
 			{
-				spawnPowerUp(PowerUpEnum.STICKY_PADDLE, entity.getWorld(), entLoc.getX(), entLoc.getY());
+				givePoints(10);
+				if(VGCore.RAND.nextInt(10) == 4)
+					spawnPowerUp(PowerUpEnum.values()[VGCore.RAND.nextInt(PowerUpEnum.values().length)], entity.getWorld(), entLoc.getX(), entLoc.getY());
 			}
+
 			if(isLevelComplete())
+			{
+				givePoints(50);
 				nextLevel(entity.getWorld());
+			}
 			else
-				ball.bounceY();
+			{
+				Ball ball = null;
+
+				for(Ball b : balls)
+				{
+					if(b.getEntity().equals(entity))
+					{
+						ball = b;
+						break;
+					}
+				}
+
+				if(ball != null)
+					ball.bounceY();
+			}
 			updateBlocks(entity.getWorld());
 		}
+	}
+
+	public void givePoints(int points)
+	{
+		this.score += points;
+		scoreHologram.setText(ChatColor.RED + "Score: " + score);
 	}
 
 	public void spawnPowerUp(PowerUpEnum powerUpType, World world, double blockX, double blockY)
@@ -256,13 +326,45 @@ public class BrickBreakerGame extends VideoGameBase
 
 	public void givePowerUp(PowerUpEnum powerUpType)
 	{
+		givePoints(15);
 		powerUpTimers.put(powerUpType, powerUpTimers.get(powerUpType) + 300);
+
+		switch(powerUpType)
+		{
+			case STICKY_PADDLE:
+				paddle.setContainedBlock(Material.SLIME_BLOCK);
+				break;
+			case MULTI_BALL:
+				balls.add(new Ball(balls.get(0), getGameLocScaled().getZ() + 0.5 + DIST_FROM_PLAYER));
+				balls.add(new Ball(balls.get(0), getGameLocScaled().getZ() + 0.5 + DIST_FROM_PLAYER));
+				break;
+			case PADDLE_SHRINK:
+				paddle.shrink();
+				break;
+			case PADDLE_GROW:
+				paddle.grow();
+				break;
+		}
 	}
 
 
 	public void removePowerUp(PowerUpEnum powerUpType)
 	{
+		switch(powerUpType)
+		{
 
+			case STICKY_PADDLE:
+				paddle.setContainedBlock(Material.AIR);
+				break;
+			case MULTI_BALL:
+				break;
+			case PADDLE_SHRINK:
+				paddle.grow();
+				break;
+			case PADDLE_GROW:
+				paddle.shrink();
+				break;
+		}
 	}
 
 	public void nextLevel(World world)
@@ -280,15 +382,18 @@ public class BrickBreakerGame extends VideoGameBase
 
 		updateBlocks(world);
 		level++;
+		while(balls.size() > 1)
+			balls.remove(balls.size() - 1).remove();
+		Ball ball = balls.get(0);
 		ball.setVelocity(0, 0);
 		ball.setGameY(PADDLE_Y + 0.75);
-		ballGrabbed = true;
+		ball.setBallGrabbed(true);
 		levelHologram.setText(ChatColor.RED + "Level: " + level);
 	}
 
 	public void updateBlocks(World world)
 	{
-		int blockBottom = getHeight() - 12;
+		int blockBottom = getHeight() - 14;
 		Vector3I gameLoc = getGameLocScaled();
 		for(int x = 1; x < getWidth(); x++)
 		{
@@ -307,9 +412,9 @@ public class BrickBreakerGame extends VideoGameBase
 
 	public boolean isLevelComplete()
 	{
-		for(int row = 0; row < blocks.length; row++)
-			for(int col = 0; col < blocks[row].length; col++)
-				if(blocks[row][col] != 0)
+		for(int[] block : blocks)
+			for(int i : block)
+				if(i != 0)
 					return false;
 		return true;
 	}

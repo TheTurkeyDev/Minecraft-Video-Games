@@ -1,5 +1,6 @@
 package dev.theturkey.videogames.games.brickbreaker;
 
+import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.util.Vector2D;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -14,14 +15,29 @@ public class Ball
 	private Vector2D ballVel;
 	private Slime ballEnt;
 	private boolean paddleCheck = false;
+	private boolean ballGrabbed;
 
 	public Ball(World world, double x, double y, double z)
 	{
+		ballGrabbed = true;
 		ballWorldOffset = new Vector2D(x, y);
 		ballLoc = new Vector2D((BrickBreakerGame.WIDTH / 2d) - 0.5, BrickBreakerGame.PADDLE_Y + 0.75);
 		ballVel = new Vector2D(0, 0);
 		Location startLoc = new Location(world, getWorldX(), getWorldY(), z);
 		ballEnt = (Slime) world.spawnEntity(startLoc, EntityType.SLIME);
+		ballEnt.setSize(1);
+		ballEnt.setAI(false);
+		ballEnt.setGravity(false);
+	}
+
+	public Ball(Ball ball, double z)
+	{
+		ballGrabbed = ball.isBallGrabbed();
+		ballWorldOffset = new Vector2D(ball.ballWorldOffset);
+		ballLoc = new Vector2D(ball.ballLoc);
+		ballVel = new Vector2D(ball.ballVel).add(VGCore.RAND.nextDouble() - 0.5, 0);
+		Location startLoc = new Location(ball.getEntity().getWorld(), getWorldX(), getWorldY(), z);
+		ballEnt = (Slime) ball.getEntity().getWorld().spawnEntity(startLoc, EntityType.SLIME);
 		ballEnt.setSize(1);
 		ballEnt.setAI(false);
 		ballEnt.setGravity(false);
@@ -49,7 +65,7 @@ public class Ball
 		else if(!paddleCheck && getGameY() < BrickBreakerGame.PADDLE_Y + 0.75f)
 		{
 			paddleCheck = true;
-			double xOff = (getGameX() - 0.5) - (paddleX - (paddleWidth / 2));
+			double xOff = (getGameX() + 0.5) - (paddleX - (paddleWidth / 2));
 			if(xOff > 0 && xOff < paddleWidth)
 			{
 				bounceY();
@@ -122,5 +138,15 @@ public class Ball
 	public void remove()
 	{
 		ballEnt.remove();
+	}
+
+	public boolean isBallGrabbed()
+	{
+		return ballGrabbed;
+	}
+
+	public void setBallGrabbed(boolean grabbed)
+	{
+		this.ballGrabbed = grabbed;
 	}
 }

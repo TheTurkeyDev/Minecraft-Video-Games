@@ -3,8 +3,9 @@ package dev.theturkey.videogames.listeners;
 import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.games.GameManager;
 import dev.theturkey.videogames.games.VideoGameBase;
+import dev.theturkey.videogames.games.VideoGamesEnum;
+import dev.theturkey.videogames.leaderboard.LeaderBoardManager;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -12,11 +13,12 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class PlayerListener implements Listener
 {
@@ -29,15 +31,13 @@ public class PlayerListener implements Listener
 			for(int z = -1; z < 2; z++)
 				world.getBlockAt(new Location(world, x, 254, z)).setType(Material.BEDROCK);
 
+		LeaderBoardManager.updateLeaderBoard(world, VideoGamesEnum.BRICK_BREAKER);
+
 		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () ->
 		{
 			e.getPlayer().setInvisible(true);
 			GameManager.sendPlayerToSpawn(e.getPlayer());
 			e.getPlayer().setWalkSpeed(0);
-			e.getPlayer().sendRawMessage(ChatColor.DARK_GREEN + "Hello! Welcome to this proof of concept, remake of video games, style server!");
-			e.getPlayer().sendRawMessage(ChatColor.AQUA + "Special thanks to Nodecraft for hosting this server!");
-			e.getPlayer().sendRawMessage(ChatColor.DARK_GREEN + "Use `/games` to get a list of games you can play!");
-			e.getPlayer().sendRawMessage(ChatColor.DARK_GREEN + "Use `/play <game name>` to play a game and `/leave` to leave");
 		}, 1);
 	}
 
@@ -69,6 +69,22 @@ public class PlayerListener implements Listener
 		if(e.getEntity() instanceof Player)
 		{
 			e.setCancelled(true);
+		}
+	}
+
+	@EventHandler
+	public void onPlayerDamage(PlayerInteractEvent e)
+	{
+		VideoGameBase game = GameManager.getGameForPlayer(e.getPlayer());
+		if(game == null)
+			return;
+		if(e.getAction().equals(Action.LEFT_CLICK_AIR))
+		{
+			game.playerLeftClick(e.getPlayer());
+		}
+		else if(e.getAction().equals(Action.RIGHT_CLICK_AIR))
+		{
+			game.playerRightClick(e.getPlayer());
 		}
 	}
 }

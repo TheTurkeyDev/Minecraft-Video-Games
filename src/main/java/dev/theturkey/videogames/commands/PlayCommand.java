@@ -1,26 +1,23 @@
 package dev.theturkey.videogames.commands;
 
 import dev.theturkey.videogames.games.GameManager;
-import dev.theturkey.videogames.games.VideoGamesEnum;
 import org.bukkit.entity.Player;
 
 public class PlayCommand implements IVGCommand
 {
 	public boolean execute(Player player, String[] args)
 	{
-		switch(args[0])
+		if(args.length == 0)
 		{
-			case "breakout":
-			case "brickbreaker":
-				GameManager.playGame(player, VideoGamesEnum.BRICK_BREAKER);
-				break;
-			//case "test":
-				//GameManager.playGame(player, VideoGamesEnum.TEST);
-				//break;
-			default:
-				player.sendRawMessage("Sorry that is not a valid game!");
-				break;
+			player.sendRawMessage("You must include the game you want to play!");
+			return false;
 		}
+
+		String game = args[0].toLowerCase();
+		if(GameManager.GAMES.containsKey(game))
+			GameManager.playGame(player, GameManager.GAMES.get(game));
+		else
+			player.sendRawMessage("Sorry that is not a valid game!");
 
 		return true;
 	}

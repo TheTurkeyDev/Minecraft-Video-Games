@@ -2,7 +2,7 @@ package dev.theturkey.videogames.games;
 
 import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.games.brickbreaker.BrickBreakerGame;
-import dev.theturkey.videogames.games.displaytest.DisplayTest;
+import dev.theturkey.videogames.games.minesweeper.MineSweeper;
 import dev.theturkey.videogames.util.Vector2I;
 import dev.theturkey.videogames.util.Vector3I;
 import org.bukkit.Bukkit;
@@ -14,7 +14,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +21,13 @@ import java.util.Map;
 public class GameManager
 {
 	private static final Location SPAWN = new Location(null, 0.5, 255, 0.5, 0, 0);
-	public static final List<String> GAMES = Arrays.asList("brickbreaker");
+	public static final Map<String, VideoGamesEnum> GAMES = new HashMap<>();
+
+	static
+	{
+		GAMES.put("brickbreaker", VideoGamesEnum.BRICK_BREAKER);
+		GAMES.put("minesweeper", VideoGamesEnum.MINESWEEPER);
+	}
 
 	private static final List<Vector2I> ACTIVE_GAME_LOCS = new ArrayList<>();
 	private static final Map<Player, VideoGameBase> ACTIVE_GAMES = new HashMap<>();
@@ -62,12 +67,10 @@ public class GameManager
 		switch(game)
 		{
 			case BRICK_BREAKER:
-				BrickBreakerGame bbgame = new BrickBreakerGame(gameLoc);
-				vGame = bbgame;
+				vGame = new BrickBreakerGame(gameLoc);
 				break;
-			case TEST:
-				DisplayTest displayTestgame = new DisplayTest(gameLoc);
-				vGame = displayTestgame;
+			case MINESWEEPER:
+				vGame = new MineSweeper(gameLoc);
 				break;
 			default:
 				player.sendRawMessage("Sorry that is not a valid game!");

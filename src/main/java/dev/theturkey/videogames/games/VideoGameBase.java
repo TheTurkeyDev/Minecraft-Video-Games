@@ -55,6 +55,10 @@ public abstract class VideoGameBase
 
 	public abstract void onPlayerJump();
 
+	public abstract void playerLeftClick(Player player);
+
+	public abstract void playerRightClick(Player player);
+
 	public abstract int getYBase();
 
 	public abstract int getWidth();
