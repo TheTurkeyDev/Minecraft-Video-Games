@@ -5,6 +5,8 @@ import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.games.GameManager;
 import dev.theturkey.videogames.games.VideoGameBase;
+import dev.theturkey.videogames.games.VideoGamesEnum;
+import dev.theturkey.videogames.leaderboard.LeaderBoardManager;
 import dev.theturkey.videogames.packetwrappers.WrapperPlayServerEntityDestroy;
 import dev.theturkey.videogames.packetwrappers.WrapperPlayServerEntityEquipment;
 import dev.theturkey.videogames.packetwrappers.WrapperPlayServerEntityMetadata;
@@ -33,14 +35,9 @@ public class MineSweeper extends VideoGameBase
 {
 	private static final int Y_BASE = 150;
 	private static final int ZDIST = 15;
-	private static final int WIDTH = 20;
-	private static final int HEIGHT = 20;
 	private static final float BLOCK_WIDTH = 0.6f;
 	private static final float BLOCK_HEIGHT = 0.6f;
-	private static final int BLOCK_START_ID = Integer.MAX_VALUE - (WIDTH * HEIGHT);
 
-
-	private static final int BOMBS = 30;
 	private static final int FLAG_TILE_ID = -2;
 	private static final int UNMARKED_TILE_ID = -1;
 
@@ -59,22 +56,29 @@ public class MineSweeper extends VideoGameBase
 		HEADS_MAPPINGS.put(8, PlayerHeadRetriever.makeSkull("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjFjOWMwOWQ1MmRlYmM0NjVjMzI1NDJjNjhiZTQyYmRhNmY2NzUzZmUxZGViYTI1NzMyN2FjNWEwYzNhZCJ9fX0="));
 	}
 
-	private int[] gameBoard = new int[WIDTH * HEIGHT];
-	private boolean[] bombsLoc = new boolean[WIDTH * HEIGHT];
+	private MinesweeperDifficulty difficulty;
+	private int[] gameBoard;
+	private boolean[] bombsLoc;
+	private int BLOCK_START_ID;
 
 	private Vector2I lookingAt = new Vector2I(0, 0);
 
 	//If time stays in the way move it to the action bar?
 	private Hologram timeHologram;
 	private Hologram flagsHologram;
+	private Hologram difficultyHologram;
 
 	private int gameTick = -1;
 	private boolean gameOver = false;
 	private long startTime = 0;
 
-	public MineSweeper(Vector2I gameLoc)
+	public MineSweeper(Vector2I gameLoc, MinesweeperDifficulty difficulty)
 	{
-		super(gameLoc, new Vector3I(gameLoc.getX(), (int) (Y_BASE - ((HEIGHT / 2) * BLOCK_HEIGHT)), gameLoc.getY()));
+		super(gameLoc, new Vector3I(gameLoc.getX(), (int) (Y_BASE - ((difficulty.getHeight() / 2) * BLOCK_HEIGHT)), gameLoc.getY()));
+		this.difficulty = difficulty;
+		this.gameBoard = new int[difficulty.getWidth() * difficulty.getHeight()];
+		this.bombsLoc = new boolean[difficulty.getWidth() * difficulty.getHeight()];
+		this.BLOCK_START_ID = Integer.MAX_VALUE - (difficulty.getWidth() * difficulty.getHeight());
 	}
 
 	@Override
@@ -84,14 +88,15 @@ public class MineSweeper extends VideoGameBase
 
 		Location playerLoc = getPlayerLoc(world);
 		timeHologram = new Hologram(world, playerLoc.clone().add(5, -2, 5), ChatColor.RED + "Time: 0 seconds");
-		flagsHologram = new Hologram(world, playerLoc.clone().add(-3, -2, 5), ChatColor.RED + "" + BOMBS + " flags left");
+		difficultyHologram = new Hologram(world, playerLoc.clone().add(5, -1.5, 5), ChatColor.RED + "Difficulty: " + difficulty.getName());
+		flagsHologram = new Hologram(world, playerLoc.clone().add(-3, -2, 5), ChatColor.RED + "" + difficulty.getBombs() + " flags left");
 
-		for(int y = 0; y < HEIGHT; y++)
+		for(int y = 0; y < difficulty.getHeight(); y++)
 		{
-			for(int x = 0; x < WIDTH; x++)
+			for(int x = 0; x < difficulty.getWidth(); x++)
 			{
-				int entID = BLOCK_START_ID + ((y * WIDTH) + x);
-				Location entLoc = new Location(world, worldLoc.getX() + ((WIDTH - x) * BLOCK_WIDTH), worldLoc.getY() + ((HEIGHT - y) * BLOCK_HEIGHT), worldLoc.getZ() + ZDIST);
+				int entID = BLOCK_START_ID + ((y * difficulty.getWidth()) + x);
+				Location entLoc = new Location(world, worldLoc.getX() + ((difficulty.getWidth() - x) * BLOCK_WIDTH), worldLoc.getY() + ((difficulty.getHeight() - y) * BLOCK_HEIGHT), worldLoc.getZ() + ZDIST);
 
 				WrapperPlayServerSpawnEntity packet = new WrapperPlayServerSpawnEntity();
 
@@ -113,12 +118,12 @@ public class MineSweeper extends VideoGameBase
 	@Override
 	public void deconstructGame(World world, Player player)
 	{
-		int[] ents = new int[WIDTH * HEIGHT];
-		for(int y = 0; y < HEIGHT; y++)
+		int[] ents = new int[difficulty.getWidth() * difficulty.getHeight()];
+		for(int y = 0; y < difficulty.getHeight(); y++)
 		{
-			for(int x = 0; x < WIDTH; x++)
+			for(int x = 0; x < difficulty.getWidth(); x++)
 			{
-				int oneDIndex = (y * WIDTH) + x;
+				int oneDIndex = (y * difficulty.getWidth()) + x;
 				ents[oneDIndex] = BLOCK_START_ID + oneDIndex;
 			}
 		}
@@ -129,6 +134,7 @@ public class MineSweeper extends VideoGameBase
 
 		timeHologram.remove();
 		flagsHologram.remove();
+		difficultyHologram.remove();
 	}
 
 	@Override
@@ -141,22 +147,22 @@ public class MineSweeper extends VideoGameBase
 		player.sendRawMessage(ChatColor.GREEN + "Right click to flag, Left click to reveal tile");
 		player.sendRawMessage(ChatColor.GREEN + "You must have the stick in hand to flag tiles!");
 
-		for(int y = 0; y < HEIGHT; y++)
+		for(int y = 0; y < difficulty.getHeight(); y++)
 		{
-			for(int x = 0; x < WIDTH; x++)
+			for(int x = 0; x < difficulty.getWidth(); x++)
 			{
-				int index = (y * WIDTH) + x;
+				int index = (y * difficulty.getWidth()) + x;
 				gameBoard[index] = UNMARKED_TILE_ID;
-				setArmorStandHead(player, BLOCK_START_ID + index, new ItemStack(Material.LIGHT_GRAY_CONCRETE));
+				setArmorStandHead(player, BLOCK_START_ID + index, new ItemStack(Material.WHITE_CONCRETE));
 			}
 		}
 
-		for(int i = 0; i < BOMBS; i++)
+		for(int i = 0; i < difficulty.getBombs(); i++)
 		{
-			int x = VGCore.RAND.nextInt(WIDTH);
-			int y = VGCore.RAND.nextInt(HEIGHT);
+			int x = VGCore.RAND.nextInt(difficulty.getWidth());
+			int y = VGCore.RAND.nextInt(difficulty.getHeight());
 
-			int index = y * WIDTH + x;
+			int index = y * difficulty.getWidth() + x;
 
 			if(!bombsLoc[index])
 				bombsLoc[index] = true;
@@ -166,6 +172,8 @@ public class MineSweeper extends VideoGameBase
 
 		gameTick = Bukkit.getScheduler().scheduleSyncRepeatingTask(VGCore.getPlugin(), () ->
 		{
+			if(gameOver)
+				return;
 			timeHologram.setText(ChatColor.RED + "Time: " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds");
 			Location playerLoc = player.getLocation();
 			float yaw = playerLoc.getYaw();
@@ -173,23 +181,23 @@ public class MineSweeper extends VideoGameBase
 			double boardX = ZDIST * Math.tan(Math.toRadians(yaw));
 			double boardY = ZDIST * Math.tan(Math.toRadians(pitch));
 
-			int x = (int) (((boardX / BLOCK_WIDTH) + (WIDTH / 2)) - 0.3);
-			int y = (int) ((boardY / BLOCK_HEIGHT) + (HEIGHT / 2)) - 1;
+			int x = (int) (((boardX / BLOCK_WIDTH) + (difficulty.getWidth() / 2)) - 0.3);
+			int y = (int) ((boardY / BLOCK_HEIGHT) + (difficulty.getHeight() / 2)) - 1;
 
-			if(x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT)
+			if(x >= 0 && x < difficulty.getWidth() && y >= 0 && y < difficulty.getHeight())
 			{
 				if(lookingAt.getX() != x || lookingAt.getY() != y)
 				{
 					if(lookingAt.getX() != -1 && lookingAt.getY() != -1)
-						setNotGlowing(player, BLOCK_START_ID + ((lookingAt.getY() * WIDTH) + lookingAt.getX()));
-					setGlowing(player, BLOCK_START_ID + ((y * WIDTH) + x));
+						setNotGlowing(player, BLOCK_START_ID + ((lookingAt.getY() * difficulty.getWidth()) + lookingAt.getX()));
+					setGlowing(player, BLOCK_START_ID + ((y * difficulty.getWidth()) + x));
 					lookingAt = new Vector2I(x, y);
 				}
 			}
 			else
 			{
 				if(lookingAt.getX() != -1 && lookingAt.getY() != -1)
-					setNotGlowing(player, BLOCK_START_ID + ((lookingAt.getY() * WIDTH) + lookingAt.getX()));
+					setNotGlowing(player, BLOCK_START_ID + ((lookingAt.getY() * difficulty.getWidth()) + lookingAt.getX()));
 				lookingAt = new Vector2I(-1, -1);
 			}
 		}, 0, 1);
@@ -208,6 +216,8 @@ public class MineSweeper extends VideoGameBase
 			long minutes = (time / 1000) / 60;
 			long seconds = (time / 1000) % 60;
 			player.sendRawMessage(ChatColor.GREEN + "You won in " + minutes + " minutes and " + seconds + " seconds!");
+			Thread t = new Thread(() -> LeaderBoardManager.addScore(player, time, getLeaderBoardKey()));
+			t.start();
 			Bukkit.getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () -> GameManager.leaveGame(player), 100);
 		}
 	}
@@ -216,11 +226,11 @@ public class MineSweeper extends VideoGameBase
 	{
 		if(gameOver || lookingAt.getX() == -1 || lookingAt.getY() == -1)
 			return;
-		int index = lookingAt.getY() * WIDTH + lookingAt.getX();
+		int index = lookingAt.getY() * difficulty.getWidth() + lookingAt.getX();
 		if(gameBoard[index] == FLAG_TILE_ID)
 		{
 			gameBoard[index] = UNMARKED_TILE_ID;
-			setArmorStandHead(player, BLOCK_START_ID + index, new ItemStack(Material.LIGHT_GRAY_CONCRETE));
+			setArmorStandHead(player, BLOCK_START_ID + index, new ItemStack(Material.WHITE_CONCRETE));
 		}
 		else if(gameBoard[index] == UNMARKED_TILE_ID)
 		{
@@ -229,11 +239,11 @@ public class MineSweeper extends VideoGameBase
 		}
 
 		int flags = 0;
-		for(int y = 0; y < HEIGHT; y++)
-			for(int x = 0; x < WIDTH; x++)
-				if(gameBoard[y * WIDTH + x] == FLAG_TILE_ID)
+		for(int y = 0; y < difficulty.getHeight(); y++)
+			for(int x = 0; x < difficulty.getWidth(); x++)
+				if(gameBoard[y * difficulty.getWidth() + x] == FLAG_TILE_ID)
 					flags++;
-		flagsHologram.setText(ChatColor.RED + "" + (BOMBS - flags) + " flags left");
+		flagsHologram.setText(ChatColor.RED + "" + (difficulty.getBombs() - flags) + " flags left");
 	}
 
 	public void setGlowing(Player player, int entID)
@@ -269,7 +279,7 @@ public class MineSweeper extends VideoGameBase
 
 	public void uncover(Player player, int x, int y)
 	{
-		int index = y * WIDTH + x;
+		int index = y * difficulty.getWidth() + x;
 		int entID = BLOCK_START_ID + index;
 		if(gameBoard[index] == FLAG_TILE_ID)
 			return;
@@ -279,17 +289,17 @@ public class MineSweeper extends VideoGameBase
 			player.sendRawMessage(ChatColor.RED + "You Lost!");
 			World world = player.getWorld();
 			Vector3I worldLoc = getGameLocScaled();
-			Location entLoc = new Location(world, worldLoc.getX() + ((WIDTH - x) * BLOCK_WIDTH), worldLoc.getY() + ((HEIGHT - y) * BLOCK_HEIGHT) + 1, worldLoc.getZ() + ZDIST - 0.5);
+			Location entLoc = new Location(world, worldLoc.getX() + ((difficulty.getWidth() - x) * BLOCK_WIDTH), worldLoc.getY() + ((difficulty.getHeight() - y) * BLOCK_HEIGHT) + 1, worldLoc.getZ() + ZDIST - 0.5);
 			TNTPrimed tntPrimed = (TNTPrimed) world.spawnEntity(entLoc, EntityType.PRIMED_TNT);
 			tntPrimed.setFuseTicks(20);
 			tntPrimed.setGravity(false);
 			tntPrimed.setIsIncendiary(false);
 			tntPrimed.setVelocity(new Vector(0, 0, 0));
-			for(int yy = 0; yy < HEIGHT; yy++)
+			for(int yy = 0; yy < difficulty.getHeight(); yy++)
 			{
-				for(int xx = 0; xx < WIDTH; xx++)
+				for(int xx = 0; xx < difficulty.getWidth(); xx++)
 				{
-					int index2 = yy * WIDTH + xx;
+					int index2 = yy * difficulty.getWidth() + xx;
 					if(bombsLoc[index2])
 						setArmorStandHead(player, BLOCK_START_ID + index2, new ItemStack(Material.TNT));
 				}
@@ -303,11 +313,11 @@ public class MineSweeper extends VideoGameBase
 			{
 				for(int xx = -1; xx < 2; xx++)
 				{
-					if(x + xx < 0 || x + xx >= WIDTH || y + yy < 0 || y + yy >= HEIGHT)
+					if(x + xx < 0 || x + xx >= difficulty.getWidth() || y + yy < 0 || y + yy >= difficulty.getHeight())
 						continue;
 					if(xx == 0 && yy == 0)
 						continue;
-					int i2 = (y + yy) * WIDTH + (x + xx);
+					int i2 = (y + yy) * difficulty.getWidth() + (x + xx);
 					if(bombsLoc[i2])
 						bombsArround++;
 				}
@@ -317,16 +327,16 @@ public class MineSweeper extends VideoGameBase
 			if(bombsArround == 0)
 			{
 				//TODO: SET ArmorStand
-				setArmorStandHead(player, entID, new ItemStack(Material.WHITE_CONCRETE));
+				setArmorStandHead(player, entID, new ItemStack(Material.LIGHT_GRAY_CONCRETE));
 				for(int yy = -1; yy < 2; yy++)
 				{
 					for(int xx = -1; xx < 2; xx++)
 					{
-						if(x + xx < 0 || x + xx >= WIDTH || y + yy < 0 || y + yy >= HEIGHT)
+						if(x + xx < 0 || x + xx >= difficulty.getWidth() || y + yy < 0 || y + yy >= difficulty.getHeight())
 							continue;
 						if(xx == 0 && yy == 0)
 							continue;
-						int i2 = (y + yy) * WIDTH + (x + xx);
+						int i2 = (y + yy) * difficulty.getWidth() + (x + xx);
 						if(gameBoard[i2] == UNMARKED_TILE_ID)
 							this.uncover(player, x + xx, y + yy);
 					}
@@ -341,11 +351,11 @@ public class MineSweeper extends VideoGameBase
 
 	public boolean hasWon()
 	{
-		for(int y = 0; y < HEIGHT; y++)
+		for(int y = 0; y < difficulty.getHeight(); y++)
 		{
-			for(int x = 0; x < WIDTH; x++)
+			for(int x = 0; x < difficulty.getWidth(); x++)
 			{
-				int index = y * WIDTH + x;
+				int index = y * difficulty.getWidth() + x;
 				if(!bombsLoc[index] && (gameBoard[index] == UNMARKED_TILE_ID || gameBoard[index] == FLAG_TILE_ID))
 					return false;
 			}
@@ -388,12 +398,24 @@ public class MineSweeper extends VideoGameBase
 	@Override
 	public int getWidth()
 	{
-		return (int) (WIDTH * BLOCK_WIDTH);
+		return (int) (difficulty.getWidth() * BLOCK_WIDTH);
 	}
 
 	@Override
 	public int getHeight()
 	{
-		return (int) (HEIGHT * BLOCK_HEIGHT);
+		return (int) (difficulty.getHeight() * BLOCK_HEIGHT);
+	}
+
+	@Override
+	public VideoGamesEnum getGameType()
+	{
+		return VideoGamesEnum.MINESWEEPER;
+	}
+
+	@Override
+	public String getLeaderBoardKey()
+	{
+		return difficulty.getLeaderBoardKey();
 	}
 }

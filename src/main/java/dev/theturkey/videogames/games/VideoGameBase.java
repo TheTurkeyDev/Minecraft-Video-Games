@@ -64,4 +64,8 @@ public abstract class VideoGameBase
 	public abstract int getWidth();
 
 	public abstract int getHeight();
+
+	public abstract VideoGamesEnum getGameType();
+
+	public abstract String getLeaderBoardKey();
 }

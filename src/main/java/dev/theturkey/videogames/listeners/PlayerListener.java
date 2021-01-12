@@ -3,7 +3,6 @@ package dev.theturkey.videogames.listeners;
 import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.games.GameManager;
 import dev.theturkey.videogames.games.VideoGameBase;
-import dev.theturkey.videogames.games.VideoGamesEnum;
 import dev.theturkey.videogames.leaderboard.LeaderBoardManager;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -31,7 +30,7 @@ public class PlayerListener implements Listener
 			for(int z = -1; z < 2; z++)
 				world.getBlockAt(new Location(world, x, 254, z)).setType(Material.BEDROCK);
 
-		LeaderBoardManager.updateLeaderBoard(world, VideoGamesEnum.BRICK_BREAKER);
+		LeaderBoardManager.updateAllLeaderBoards(world);
 
 		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () ->
 		{

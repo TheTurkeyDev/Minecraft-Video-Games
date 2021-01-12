@@ -166,7 +166,7 @@ public class BrickBreakerGame extends VideoGameBase
 								player.sendRawMessage(ChatColor.RED + "You Lost!");
 								player.sendRawMessage(ChatColor.RED + "You made it to level " + level + "!");
 								player.sendRawMessage(ChatColor.RED + "Score: " + score);
-								Thread t = new Thread(() -> LeaderBoardManager.addScore(player, score, VideoGamesEnum.BRICK_BREAKER));
+								Thread t = new Thread(() -> LeaderBoardManager.addScore(player, score, getLeaderBoardKey()));
 								t.start();
 
 								GameManager.leaveGame(player);
@@ -436,5 +436,19 @@ public class BrickBreakerGame extends VideoGameBase
 			default:
 				return Material.AIR;
 		}
+	}
+
+	@Override
+	public VideoGamesEnum getGameType()
+	{
+		return VideoGamesEnum.MINESWEEPER;
+	}
+
+	public static final String LEADER_BOARD_ID = "mcvg_" + VideoGamesEnum.MINESWEEPER.name().toLowerCase();
+
+	@Override
+	public String getLeaderBoardKey()
+	{
+		return LEADER_BOARD_ID;
 	}
 }

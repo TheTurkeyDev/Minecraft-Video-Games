@@ -15,7 +15,7 @@ public class PlayCommand implements IVGCommand
 
 		String game = args[0].toLowerCase();
 		if(GameManager.GAMES.containsKey(game))
-			GameManager.playGame(player, GameManager.GAMES.get(game));
+			GameManager.playGame(player, GameManager.GAMES.get(game), args);
 		else
 			player.sendRawMessage("Sorry that is not a valid game!");
 
