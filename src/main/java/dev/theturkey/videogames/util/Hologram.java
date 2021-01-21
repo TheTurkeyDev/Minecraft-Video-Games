@@ -2,7 +2,6 @@ package dev.theturkey.videogames.util;
 
 import dev.theturkey.videogames.VGCore;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -11,9 +10,9 @@ public class Hologram
 {
 	private ArmorStand armorStand;
 
-	public Hologram(World world, Location location, String text)
+	public Hologram(Location location, String text)
 	{
-		armorStand = (ArmorStand) world.spawnEntity(location, EntityType.ARMOR_STAND);
+		armorStand = (ArmorStand) VGCore.gameWorld.spawnEntity(location, EntityType.ARMOR_STAND);
 		armorStand.setVisible(false);
 		armorStand.setCustomName(text);
 		armorStand.setCustomNameVisible(!text.isEmpty());

@@ -1,6 +1,7 @@
 package dev.theturkey.videogames.commands;
 
 import dev.theturkey.videogames.games.GameManager;
+import dev.theturkey.videogames.leaderboard.LeaderBoardManager;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -11,6 +12,8 @@ public class GamesCommand implements IVGCommand
 		player.sendRawMessage(ChatColor.DARK_GREEN + "Playable Games (To play run `/play <game name>`):");
 		for(String game : GameManager.GAMES.keySet())
 			player.sendRawMessage(ChatColor.GREEN + "- " + game);
+
+		LeaderBoardManager.showLeaderBoards(player);
 
 		return true;
 	}

@@ -1,16 +1,12 @@
 package dev.theturkey.videogames.games.minesweeper;
 
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.games.GameManager;
 import dev.theturkey.videogames.games.VideoGameBase;
 import dev.theturkey.videogames.games.VideoGamesEnum;
 import dev.theturkey.videogames.leaderboard.LeaderBoardManager;
-import dev.theturkey.videogames.packetwrappers.WrapperPlayServerEntityDestroy;
-import dev.theturkey.videogames.packetwrappers.WrapperPlayServerEntityEquipment;
-import dev.theturkey.videogames.packetwrappers.WrapperPlayServerEntityMetadata;
-import dev.theturkey.videogames.packetwrappers.WrapperPlayServerSpawnEntity;
+import dev.theturkey.videogames.util.FakeArmorStandUtil;
+import dev.theturkey.videogames.util.FakeHologram;
 import dev.theturkey.videogames.util.Hologram;
 import dev.theturkey.videogames.util.PlayerHeadRetriever;
 import dev.theturkey.videogames.util.Vector2I;
@@ -27,9 +23,10 @@ import org.bukkit.entity.TNTPrimed;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class MineSweeper extends VideoGameBase
 {
@@ -67,6 +64,7 @@ public class MineSweeper extends VideoGameBase
 	private Hologram timeHologram;
 	private Hologram flagsHologram;
 	private Hologram difficultyHologram;
+	private Map<Integer, FakeHologram> fakeEnts = new HashMap<>();
 
 	private int gameTick = -1;
 	private boolean gameOver = false;
@@ -82,41 +80,31 @@ public class MineSweeper extends VideoGameBase
 	}
 
 	@Override
-	public void constructGame(World world, Player player)
+	public void constructGame(Player player)
 	{
 		Vector3I worldLoc = getGameLocScaled();
 
-		Location playerLoc = getPlayerLoc(world);
-		timeHologram = new Hologram(world, playerLoc.clone().add(5, -2, 5), ChatColor.RED + "Time: 0 seconds");
-		difficultyHologram = new Hologram(world, playerLoc.clone().add(5, -1.5, 5), ChatColor.RED + "Difficulty: " + difficulty.getName());
-		flagsHologram = new Hologram(world, playerLoc.clone().add(-3, -2, 5), ChatColor.RED + "" + difficulty.getBombs() + " flags left");
+		Location playerLoc = getPlayerLoc();
+		timeHologram = new Hologram(playerLoc.clone().add(5, -2, 5), ChatColor.RED + "Time: 0 seconds");
+		difficultyHologram = new Hologram(playerLoc.clone().add(5, -1.5, 5), ChatColor.RED + "Difficulty: " + difficulty.getName());
+		flagsHologram = new Hologram(playerLoc.clone().add(-3, -2, 5), ChatColor.RED + "" + difficulty.getBombs() + " flags left");
 
 		for(int y = 0; y < difficulty.getHeight(); y++)
 		{
 			for(int x = 0; x < difficulty.getWidth(); x++)
 			{
 				int entID = BLOCK_START_ID + ((y * difficulty.getWidth()) + x);
-				Location entLoc = new Location(world, worldLoc.getX() + ((difficulty.getWidth() - x) * BLOCK_WIDTH), worldLoc.getY() + ((difficulty.getHeight() - y) * BLOCK_HEIGHT), worldLoc.getZ() + ZDIST);
+				Location entLoc = new Location(VGCore.gameWorld, worldLoc.getX() + ((difficulty.getWidth() - x) * BLOCK_WIDTH), worldLoc.getY() + ((difficulty.getHeight() - y) * BLOCK_HEIGHT), worldLoc.getZ() + ZDIST);
 
-				WrapperPlayServerSpawnEntity packet = new WrapperPlayServerSpawnEntity();
-
-				packet.setX(entLoc.getX());
-				packet.setY(entLoc.getY());
-				packet.setZ(entLoc.getZ());
-				packet.setUniqueId(UUID.randomUUID());
-				packet.setType(EntityType.ARMOR_STAND);
-				packet.setEntityID(entID);
-				packet.setPitch(0);
-				packet.setYaw(180);
-				packet.sendPacket(player);
-
-				sendMetaDataPacket(player, entID, (byte) 0x20);
+				fakeEnts.put(entID, new FakeHologram(entID, entLoc));
 			}
 		}
+
+		FakeArmorStandUtil.send(player, new ArrayList<>(fakeEnts.values()));
 	}
 
 	@Override
-	public void deconstructGame(World world, Player player)
+	public void deconstructGame(Player player)
 	{
 		int[] ents = new int[difficulty.getWidth() * difficulty.getHeight()];
 		for(int y = 0; y < difficulty.getHeight(); y++)
@@ -128,34 +116,35 @@ public class MineSweeper extends VideoGameBase
 			}
 		}
 		// Remove entities
-		WrapperPlayServerEntityDestroy destroyPacket = new WrapperPlayServerEntityDestroy();
-		destroyPacket.setEntityIds(ents);
-		destroyPacket.sendPacket(player);
-
+		FakeArmorStandUtil.removeArmorStands(player, ents);
 		timeHologram.remove();
 		flagsHologram.remove();
 		difficultyHologram.remove();
 	}
 
 	@Override
-	public void startGame(World world, Player player)
+	public void startGame(Player player)
 	{
-		super.startGame(world, player);
+		super.startGame(player);
 		startTime = System.currentTimeMillis();
 		player.getInventory().setItem(0, new ItemStack(Material.STICK));
 
 		player.sendRawMessage(ChatColor.GREEN + "Right click to flag, Left click to reveal tile");
 		player.sendRawMessage(ChatColor.GREEN + "You must have the stick in hand to flag tiles!");
 
+		List<FakeHologram> headUpdate = new ArrayList<>();
 		for(int y = 0; y < difficulty.getHeight(); y++)
 		{
 			for(int x = 0; x < difficulty.getWidth(); x++)
 			{
 				int index = (y * difficulty.getWidth()) + x;
 				gameBoard[index] = UNMARKED_TILE_ID;
-				setArmorStandHead(player, BLOCK_START_ID + index, new ItemStack(Material.WHITE_CONCRETE));
+				FakeHologram hologram = fakeEnts.get(BLOCK_START_ID + index);
+				hologram.setHeadItem(new ItemStack(Material.WHITE_CONCRETE));
+				headUpdate.add(hologram);
 			}
 		}
+		FakeArmorStandUtil.updateArmor(player, headUpdate);
 
 		for(int i = 0; i < difficulty.getBombs(); i++)
 		{
@@ -188,16 +177,28 @@ public class MineSweeper extends VideoGameBase
 			{
 				if(lookingAt.getX() != x || lookingAt.getY() != y)
 				{
+					List<FakeHologram> toUpdate = new ArrayList<>();
 					if(lookingAt.getX() != -1 && lookingAt.getY() != -1)
-						setNotGlowing(player, BLOCK_START_ID + ((lookingAt.getY() * difficulty.getWidth()) + lookingAt.getX()));
-					setGlowing(player, BLOCK_START_ID + ((y * difficulty.getWidth()) + x));
+					{
+						FakeHologram hologram = fakeEnts.get(BLOCK_START_ID + ((lookingAt.getY() * difficulty.getWidth()) + lookingAt.getX()));
+						hologram.setGlowing(false);
+						toUpdate.add(hologram);
+					}
+					FakeHologram hologram = fakeEnts.get(BLOCK_START_ID + ((y * difficulty.getWidth()) + x));
+					hologram.setGlowing(true);
+					toUpdate.add(hologram);
+					FakeArmorStandUtil.updateMeta(player, toUpdate);
 					lookingAt = new Vector2I(x, y);
 				}
 			}
 			else
 			{
 				if(lookingAt.getX() != -1 && lookingAt.getY() != -1)
-					setNotGlowing(player, BLOCK_START_ID + ((lookingAt.getY() * difficulty.getWidth()) + lookingAt.getX()));
+				{
+					FakeHologram hologram = fakeEnts.get(BLOCK_START_ID + ((lookingAt.getY() * difficulty.getWidth()) + lookingAt.getX()));
+					hologram.setGlowing(false);
+					FakeArmorStandUtil.updateMeta(player, hologram);
+				}
 				lookingAt = new Vector2I(-1, -1);
 			}
 		}, 0, 1);
@@ -208,7 +209,7 @@ public class MineSweeper extends VideoGameBase
 		if(gameOver || lookingAt.getX() == -1 || lookingAt.getY() == -1)
 			return;
 
-		uncover(player, lookingAt.getX(), lookingAt.getY());
+		FakeArmorStandUtil.updateArmor(player, uncover(player, lookingAt.getX(), lookingAt.getY()));
 		if(hasWon())
 		{
 			gameOver = true;
@@ -230,12 +231,16 @@ public class MineSweeper extends VideoGameBase
 		if(gameBoard[index] == FLAG_TILE_ID)
 		{
 			gameBoard[index] = UNMARKED_TILE_ID;
-			setArmorStandHead(player, BLOCK_START_ID + index, new ItemStack(Material.WHITE_CONCRETE));
+			FakeHologram fakeHologram = fakeEnts.get(BLOCK_START_ID + index);
+			fakeHologram.setHeadItem(new ItemStack(Material.WHITE_CONCRETE));
+			fakeHologram.sendArmorStandHeadPacket(player);
 		}
 		else if(gameBoard[index] == UNMARKED_TILE_ID)
 		{
 			gameBoard[index] = FLAG_TILE_ID;
-			setArmorStandHead(player, BLOCK_START_ID + index, HEADS_MAPPINGS.get(-2).clone());
+			FakeHologram fakeHologram = fakeEnts.get(BLOCK_START_ID + index);
+			fakeHologram.setHeadItem(HEADS_MAPPINGS.get(-2).clone());
+			fakeHologram.sendArmorStandHeadPacket(player);
 		}
 
 		int flags = 0;
@@ -246,43 +251,13 @@ public class MineSweeper extends VideoGameBase
 		flagsHologram.setText(ChatColor.RED + "" + (difficulty.getBombs() - flags) + " flags left");
 	}
 
-	public void setGlowing(Player player, int entID)
+	public List<FakeHologram> uncover(Player player, int x, int y)
 	{
-		sendMetaDataPacket(player, entID, (byte) (0x20 + 0x40));
-	}
-
-	public void setNotGlowing(Player player, int entID)
-	{
-		sendMetaDataPacket(player, entID, (byte) 0x20);
-	}
-
-	public void sendMetaDataPacket(Player player, int entID, byte infoByte)
-	{
-		WrappedDataWatcher dataWatcher = new WrappedDataWatcher();
-		dataWatcher.setObject(new WrappedDataWatcher.WrappedDataWatcherObject(0, WrappedDataWatcher.Registry.get(Byte.class)), infoByte); // Invisible and Glowing
-		dataWatcher.setObject(new WrappedDataWatcher.WrappedDataWatcherObject(5, WrappedDataWatcher.Registry.get(Boolean.class)), true); // No Gravity
-		dataWatcher.setObject(new WrappedDataWatcher.WrappedDataWatcherObject(14, WrappedDataWatcher.Registry.get(Byte.class)), (byte) (0x08 + 0x10)); // No Base plate & marker
-
-		WrapperPlayServerEntityMetadata metadataPacket = new WrapperPlayServerEntityMetadata();
-		metadataPacket.setMetadata(dataWatcher.getWatchableObjects());
-		metadataPacket.setEntityID(entID);
-		metadataPacket.sendPacket(player);
-	}
-
-	public void setArmorStandHead(Player player, int entID, ItemStack stack)
-	{
-		WrapperPlayServerEntityEquipment equipmentPacket = new WrapperPlayServerEntityEquipment();
-		equipmentPacket.setEntityID(entID);
-		equipmentPacket.setSlotStackPair(EnumWrappers.ItemSlot.HEAD, stack);
-		equipmentPacket.sendPacket(player);
-	}
-
-	public void uncover(Player player, int x, int y)
-	{
+		List<FakeHologram> toUpdate = new ArrayList<>();
 		int index = y * difficulty.getWidth() + x;
 		int entID = BLOCK_START_ID + index;
 		if(gameBoard[index] == FLAG_TILE_ID)
-			return;
+			return new ArrayList<>();
 		if(bombsLoc[index])
 		{
 			gameOver = true;
@@ -301,7 +276,11 @@ public class MineSweeper extends VideoGameBase
 				{
 					int index2 = yy * difficulty.getWidth() + xx;
 					if(bombsLoc[index2])
-						setArmorStandHead(player, BLOCK_START_ID + index2, new ItemStack(Material.TNT));
+					{
+						FakeHologram fakeHologram = fakeEnts.get(BLOCK_START_ID + index2);
+						fakeHologram.setHeadItem(new ItemStack(Material.TNT));
+						toUpdate.add(fakeHologram);
+					}
 				}
 			}
 			Bukkit.getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () -> GameManager.leaveGame(player), 100);
@@ -327,7 +306,9 @@ public class MineSweeper extends VideoGameBase
 			if(bombsArround == 0)
 			{
 				//TODO: SET ArmorStand
-				setArmorStandHead(player, entID, new ItemStack(Material.LIGHT_GRAY_CONCRETE));
+				FakeHologram fakeHologram = fakeEnts.get(entID);
+				fakeHologram.setHeadItem(new ItemStack(Material.LIGHT_GRAY_CONCRETE));
+				toUpdate.add(fakeHologram);
 				for(int yy = -1; yy < 2; yy++)
 				{
 					for(int xx = -1; xx < 2; xx++)
@@ -338,15 +319,18 @@ public class MineSweeper extends VideoGameBase
 							continue;
 						int i2 = (y + yy) * difficulty.getWidth() + (x + xx);
 						if(gameBoard[i2] == UNMARKED_TILE_ID)
-							this.uncover(player, x + xx, y + yy);
+							toUpdate.addAll(this.uncover(player, x + xx, y + yy));
 					}
 				}
 			}
 			else
 			{
-				setArmorStandHead(player, entID, HEADS_MAPPINGS.get(bombsArround));
+				FakeHologram fakeHologram = fakeEnts.get(entID);
+				fakeHologram.setHeadItem(HEADS_MAPPINGS.get(bombsArround).clone());
+				toUpdate.add(fakeHologram);
 			}
 		}
+		return toUpdate;
 	}
 
 	public boolean hasWon()
@@ -364,9 +348,9 @@ public class MineSweeper extends VideoGameBase
 	}
 
 	@Override
-	public void endGame(World world, Player player)
+	public void endGame(Player player)
 	{
-		super.endGame(world, player);
+		super.endGame(player);
 		player.getInventory().clear();
 		Bukkit.getScheduler().cancelTask(gameTick);
 	}

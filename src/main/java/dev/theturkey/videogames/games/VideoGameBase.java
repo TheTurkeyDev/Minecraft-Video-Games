@@ -1,9 +1,9 @@
 package dev.theturkey.videogames.games;
 
+import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.util.Vector2I;
 import dev.theturkey.videogames.util.Vector3I;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
@@ -29,22 +29,22 @@ public abstract class VideoGameBase
 		return new Vector3I(gameLoc.getX() * DIST_SCALE, gameLoc.getY(), gameLoc.getZ() * DIST_SCALE);
 	}
 
-	public Location getPlayerLoc(World world)
+	public Location getPlayerLoc()
 	{
 		Vector3I scaled = getGameLocScaled();
-		return new Location(world, scaled.getX() + (getWidth() / 2d), getYBase() + 1, scaled.getZ() + 0.5, 0, 0);
+		return new Location(VGCore.gameWorld, scaled.getX() + (getWidth() / 2d), getYBase() + 1, scaled.getZ() + 0.5, 0, 0);
 	}
 
-	public abstract void constructGame(World world, Player player);
+	public abstract void constructGame(Player player);
 
-	public abstract void deconstructGame(World world, Player player);
+	public abstract void deconstructGame(Player player);
 
-	public void startGame(World world, Player player)
+	public void startGame(Player player)
 	{
 		player.setInvisible(false);
 	}
 
-	public void endGame(World world, Player player)
+	public void endGame(Player player)
 	{
 		GameManager.sendPlayerToSpawn(player);
 	}

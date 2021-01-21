@@ -3,15 +3,13 @@ package dev.theturkey.videogames.leaderboard;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import dev.theturkey.videogames.VGCore;
-import dev.theturkey.videogames.util.Hologram;
+import dev.theturkey.videogames.util.FakeArmorStandUtil;
+import dev.theturkey.videogames.util.FakeHologram;
 import dev.theturkey.videogames.util.Vector2D;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,34 +18,54 @@ public class LeaderBoardManager
 {
 	private static final Map<String, LeaderBoardDataWrapper> LEADER_BOARDS = new HashMap<>();
 
-	private static ILeaderBoardController leaderBoardController = new DefaultLeaderBoardController();
+	private static ILeaderBoardController leaderBoardController;
 
-	public static void updateLeaderBoard(World world, String leaderBoardId)
+
+	public static void addScore(Player player, long score, String leaderBoardId)
 	{
-		if(!LEADER_BOARDS.containsKey(leaderBoardId))
-			return;
+		leaderBoardController.addScore(player, score, leaderBoardId);
+	}
 
-		LeaderBoardDataWrapper leaderBoardDataWrapper = LEADER_BOARDS.get(leaderBoardId);
-		JsonObject data = leaderBoardController.getRankings(leaderBoardId, 10, leaderBoardDataWrapper.asc);
-		if(!data.has("rankings"))
-			return;
+	public static void setLeaderBoardController(ILeaderBoardController controller)
+	{
+		leaderBoardController = controller;
+	}
 
-		JsonArray rankings = data.getAsJsonArray("rankings");
-		Bukkit.getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () ->
+	public static void registerLeaderBoard(String id, String displayName, LeaderBoardScoreType scoreType, boolean asc)
+	{
+		LEADER_BOARDS.put(id, new LeaderBoardDataWrapper(displayName, scoreType, asc));
+	}
+
+	public static void showLeaderBoards(Player player)
+	{
+		List<FakeHologram> hologramList = new ArrayList<>();
+		int currentEntID = Integer.MAX_VALUE - 1000000;
+
+		for(String leaderboardId : LEADER_BOARDS.keySet())
 		{
-			Hologram[] holograms = leaderBoardDataWrapper.holograms;
-			for(int i = 0; i < holograms.length; i++)
+			LeaderBoardDataWrapper leaderBoardDataWrapper = LEADER_BOARDS.get(leaderboardId);
+			JsonObject data;
+			try
 			{
-				if(holograms[i] == null)
-				{
-					Hologram hologram = new Hologram(world, new Location(world, leaderBoardDataWrapper.xzLocation.getX(), 256 - (i * 0.25), leaderBoardDataWrapper.xzLocation.getY()), "");
-					hologram.setKey(leaderBoardId + "_" + (i == 0 ? "TITLE" : (i - 1)));
-					holograms[i] = hologram;
-				}
+				data = leaderBoardController.getRankings(leaderboardId, 10, leaderBoardDataWrapper.asc);
+			} catch(Exception e)
+			{
+				e.printStackTrace();
+				continue;
+			}
+			if(!data.has("rankings"))
+				return;
 
+			JsonArray rankings = data.getAsJsonArray("rankings");
+			for(int i = 0; i < 11; i++)
+			{
+				FakeHologram hologram = new FakeHologram(currentEntID, new Location(VGCore.gameWorld, leaderBoardDataWrapper.xzLocation.getX(), 256 - (i * 0.25), leaderBoardDataWrapper.xzLocation.getY()));
+
+				hologramList.add(hologram);
+				currentEntID--;
 				if(i == 0)
 				{
-					holograms[i].setText(leaderBoardDataWrapper.displayName);
+					hologram.setText(leaderBoardDataWrapper.displayName);
 				}
 				else
 				{
@@ -68,75 +86,49 @@ public class LeaderBoardManager
 							ms = ms - (seconds * 1000);
 							score = String.format("%d:%02d.%03d", minutes, seconds, ms);
 						}
-						holograms[i].setText(rankObj.get("display_name").getAsString() + " - " + score);
+						hologram.setText(rankObj.get("display_name").getAsString() + " - " + score);
 					}
 				}
 			}
-		}, 1);
+		}
+
+		FakeArmorStandUtil.send(player, hologramList);
 	}
 
-	public static void updateAllLeaderBoards(World world)
+	public static void removeLeaderBoards(Player player)
 	{
-		for(String leaderBoardId : LEADER_BOARDS.keySet())
-			updateLeaderBoard(world, leaderBoardId);
-	}
+		int currentEntID = Integer.MAX_VALUE - 1000000;
+		int[] entIds = new int[LEADER_BOARDS.size() * 11];
+		int index = 0;
+		for(int i = 0; i < LEADER_BOARDS.keySet().size(); i++)
+		{
+			for(int j = 0; j < 11; j++)
+			{
+				entIds[index] = currentEntID;
+				currentEntID--;
+				index++;
+			}
+		}
 
-	public static void addScore(Player player, long score, String leaderBoardId)
-	{
-		leaderBoardController.addScore(player, score, leaderBoardId);
+		FakeArmorStandUtil.removeArmorStands(player, entIds);
 	}
-
-	public static void setLeaderBoardController(ILeaderBoardController controller)
-	{
-		leaderBoardController = controller;
-	}
-
-	public static void registerLeaderBoard(World world, String id, String displayName, LeaderBoardScoreType scoreType, boolean asc)
-	{
-		LEADER_BOARDS.put(id, new LeaderBoardDataWrapper(world, id, displayName, scoreType, asc));
-	}
-
 
 	private static class LeaderBoardDataWrapper
 	{
-		private String leaderBoardId;
 		private String displayName;
 		private Vector2D xzLocation;
-		private Hologram[] holograms;
 		private LeaderBoardScoreType scoreType;
 		private boolean asc;
 
-		public LeaderBoardDataWrapper(World world, String leaderBoardId, String displayName, LeaderBoardScoreType scoreType, boolean asc)
+		public LeaderBoardDataWrapper(String displayName, LeaderBoardScoreType scoreType, boolean asc)
 		{
-			this.leaderBoardId = leaderBoardId;
 			this.displayName = displayName;
-			this.holograms = new Hologram[11];
 			this.scoreType = scoreType;
 			this.asc = asc;
 
 			double angle = LEADER_BOARDS.size() * (Math.PI / 8);
 
 			xzLocation = new Vector2D(Math.cos(angle) * 15, Math.sin(angle) * 15);
-
-			List<Entity> ents = world.getEntities();
-
-			for(Entity ent : ents)
-			{
-				if(ent instanceof ArmorStand && ent.hasMetadata("hologram-key"))
-				{
-					String key = ent.getMetadata("hologram-key").get(0).asString();
-					if(key.startsWith(leaderBoardId + "_"))
-					{
-						String[] parts = key.split("_");
-						String part = parts[parts.length - 1];
-						Hologram hologram = new Hologram((ArmorStand) ent);
-						int index = 0;
-						if(!part.equalsIgnoreCase("TITLE"))
-							index = 1 + Integer.parseInt(part);
-						holograms[index] = hologram;
-					}
-				}
-			}
 		}
 	}
 }

@@ -63,33 +63,33 @@ public class BrickBreakerGame extends VideoGameBase
 	}
 
 	@Override
-	public void constructGame(World world, Player player)
+	public void constructGame(Player player)
 	{
 		Vector3I worldLoc = getGameLocScaled();
 
-		paddle = new Paddle(world, worldLoc.getX() + getWidth(), worldLoc.getY(), worldLoc.getZ() + 0.5 + DIST_FROM_PLAYER);
-		balls.add(new Ball(world, worldLoc.getX() + getWidth(), worldLoc.getY(), worldLoc.getZ() + 0.5 + DIST_FROM_PLAYER));
+		paddle = new Paddle(VGCore.gameWorld, worldLoc.getX() + getWidth(), worldLoc.getY(), worldLoc.getZ() + 0.5 + DIST_FROM_PLAYER);
+		balls.add(new Ball(VGCore.gameWorld, worldLoc.getX() + getWidth(), worldLoc.getY(), worldLoc.getZ() + 0.5 + DIST_FROM_PLAYER));
 
-		Location playerLoc = getPlayerLoc(world);
-		healthHologram = new Hologram(world, playerLoc.clone().add(3, -2, 5), ChatColor.RED + "LIVES: \u2665\u2665\u2665");
-		levelHologram = new Hologram(world, playerLoc.clone().add(-3, -2, 5), ChatColor.RED + "Level: " + level);
-		scoreHologram = new Hologram(world, playerLoc.clone().add(-3, -1.5, 5), ChatColor.RED + "Score: " + score);
+		Location playerLoc = getPlayerLoc();
+		healthHologram = new Hologram(playerLoc.clone().add(3, -2, 5), ChatColor.RED + "LIVES: \u2665\u2665\u2665");
+		levelHologram = new Hologram(playerLoc.clone().add(-3, -2, 5), ChatColor.RED + "Level: " + level);
+		scoreHologram = new Hologram(playerLoc.clone().add(-3, -1.5, 5), ChatColor.RED + "Score: " + score);
 
 		for(int x = 0; x < getWidth(); x++)
 		{
 			for(int yy = 0; yy < getHeight(); yy++)
 			{
-				world.getBlockAt(worldLoc.getX() + x, worldLoc.getY() + yy, worldLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.BLACK_CONCRETE);
+				VGCore.gameWorld.getBlockAt(worldLoc.getX() + x, worldLoc.getY() + yy, worldLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.BLACK_CONCRETE);
 				if(x == 0 || x == getWidth() - 1 || yy == 0 || yy == getHeight() - 1)
-					world.getBlockAt(worldLoc.getX() + x, worldLoc.getY() + yy, worldLoc.getZ() + DIST_FROM_PLAYER).setType(Material.WHITE_CONCRETE);
+					VGCore.gameWorld.getBlockAt(worldLoc.getX() + x, worldLoc.getY() + yy, worldLoc.getZ() + DIST_FROM_PLAYER).setType(Material.WHITE_CONCRETE);
 			}
 		}
 	}
 
 	@Override
-	public void startGame(World world, Player player)
+	public void startGame(Player player)
 	{
-		super.startGame(world, player);
+		super.startGame(player);
 		lives = 3;
 		level = 0;
 		score = 0;
@@ -97,7 +97,7 @@ public class BrickBreakerGame extends VideoGameBase
 		powerUpTimers.put(PowerUpEnum.MULTI_BALL, 0);
 		powerUpTimers.put(PowerUpEnum.PADDLE_GROW, 0);
 		powerUpTimers.put(PowerUpEnum.PADDLE_SHRINK, 0);
-		nextLevel(world);
+		nextLevel(VGCore.gameWorld);
 
 		player.sendRawMessage(ChatColor.GREEN + "Jump to start!");
 
@@ -187,14 +187,14 @@ public class BrickBreakerGame extends VideoGameBase
 	}
 
 	@Override
-	public void endGame(World world, Player player)
+	public void endGame(Player player)
 	{
-		super.endGame(world, player);
+		super.endGame(player);
 		Bukkit.getScheduler().cancelTask(gameTick);
 	}
 
 	@Override
-	public void deconstructGame(World world, Player player)
+	public void deconstructGame(Player player)
 	{
 		Vector3I gameLoc = getGameLocScaled();
 		paddle.remove();
@@ -212,8 +212,8 @@ public class BrickBreakerGame extends VideoGameBase
 		{
 			for(int yy = 0; yy < getHeight(); yy++)
 			{
-				world.getBlockAt(gameLoc.getX() + x, gameLoc.getY() + yy, gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.AIR);
-				world.getBlockAt(gameLoc.getX() + x, gameLoc.getY() + yy, gameLoc.getZ() + DIST_FROM_PLAYER).setType(Material.AIR);
+				VGCore.gameWorld.getBlockAt(gameLoc.getX() + x, gameLoc.getY() + yy, gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.AIR);
+				VGCore.gameWorld.getBlockAt(gameLoc.getX() + x, gameLoc.getY() + yy, gameLoc.getZ() + DIST_FROM_PLAYER).setType(Material.AIR);
 			}
 		}
 	}
@@ -441,10 +441,10 @@ public class BrickBreakerGame extends VideoGameBase
 	@Override
 	public VideoGamesEnum getGameType()
 	{
-		return VideoGamesEnum.MINESWEEPER;
+		return VideoGamesEnum.BRICK_BREAKER;
 	}
 
-	public static final String LEADER_BOARD_ID = "mcvg_" + VideoGamesEnum.MINESWEEPER.name().toLowerCase();
+	public static final String LEADER_BOARD_ID = "mcvg_" + VideoGamesEnum.BRICK_BREAKER.name().toLowerCase();
 
 	@Override
 	public String getLeaderBoardKey()

@@ -8,7 +8,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -24,19 +23,20 @@ public class PlayerListener implements Listener
 	@EventHandler
 	public void onPlayerLogin(PlayerLoginEvent e)
 	{
-		World world = e.getPlayer().getWorld();
-
-		for(int x = -1; x < 2; x++)
-			for(int z = -1; z < 2; z++)
-				world.getBlockAt(new Location(world, x, 254, z)).setType(Material.BEDROCK);
-
-		LeaderBoardManager.updateAllLeaderBoards(world);
-
 		Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () ->
 		{
-			e.getPlayer().setInvisible(true);
-			GameManager.sendPlayerToSpawn(e.getPlayer());
+			if(!e.getPlayer().getWorld().getName().equalsIgnoreCase(VGCore.gameWorld.getName()))
+				return;
+
+			for(int x = -1; x < 2; x++)
+				for(int z = -1; z < 2; z++)
+					VGCore.gameWorld.getBlockAt(new Location(VGCore.gameWorld, x, 254, z)).setType(Material.BEDROCK);
+
+			LeaderBoardManager.showLeaderBoards(e.getPlayer());
+
+
 			e.getPlayer().setWalkSpeed(0);
+			GameManager.sendPlayerToSpawn(e.getPlayer());
 		}, 1);
 	}
 

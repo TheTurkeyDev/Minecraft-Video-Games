@@ -23,7 +23,6 @@ import java.util.Map;
 
 public class GameManager
 {
-	private static final Location SPAWN = new Location(null, 0.5, 255, 0.5, 0, 0);
 	public static final Map<String, VideoGamesEnum> GAMES = new HashMap<>();
 
 	static
@@ -42,6 +41,8 @@ public class GameManager
 			player.sendMessage("You are already currently in a game! Use '/leave' first!");
 			return;
 		}
+
+		LeaderBoardManager.removeLeaderBoards(player);
 
 		Vector2I gameLoc = null;
 
@@ -163,17 +164,16 @@ public class GameManager
 		ACTIVE_GAMES.put(player, vGame);
 
 		double halfWidth = vGame.getWidth() / 2d;
-		World world = player.getWorld();
 		Vector3I gameLocSale = vGame.getGameLocScaled();
-		world.getBlockAt(new Location(world, gameLocSale.getX() + halfWidth, vGame.getYBase(), gameLocSale.getZ())).setType(Material.BEDROCK);
+		VGCore.gameWorld.getBlockAt(new Location(VGCore.gameWorld, gameLocSale.getX() + halfWidth, vGame.getYBase(), gameLocSale.getZ())).setType(Material.BEDROCK);
 
-		Location playerLoc = new Location(world, gameLocSale.getX() + halfWidth + 0.5, vGame.getYBase() + 1, gameLocSale.getZ() + 0.5, 0, 0);
+		Location playerLoc = new Location(VGCore.gameWorld, gameLocSale.getX() + halfWidth + 0.5, vGame.getYBase() + 1, gameLocSale.getZ() + 0.5, 0, 0);
 		player.teleport(playerLoc, PlayerTeleportEvent.TeleportCause.COMMAND);
 
 		Bukkit.getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () ->
 		{
-			vGame.constructGame(player.getWorld(), player);
-			vGame.startGame(player.getWorld(), player);
+			vGame.constructGame(player);
+			vGame.startGame(player);
 		}, 10);
 
 	}
@@ -190,20 +190,19 @@ public class GameManager
 
 		sendPlayerToSpawn(player);
 		VideoGameBase game = ACTIVE_GAMES.remove(player);
-		game.endGame(player.getWorld(), player);
+		game.endGame(player);
 		ACTIVE_GAME_LOCS.remove(game.getGameLoc());
 
 		Vector3I gameLocSale = game.getGameLocScaled();
 		world.getBlockAt(new Location(world, gameLocSale.getX() + (game.getWidth() / 2d), game.getYBase(), gameLocSale.getZ())).setType(Material.AIR);
-		game.deconstructGame(player.getWorld(), player);
+		game.deconstructGame(player);
 
-		LeaderBoardManager.updateLeaderBoard(world, game.getLeaderBoardKey());
+		LeaderBoardManager.showLeaderBoards(player);
 	}
 
 	public static void sendPlayerToSpawn(Player player)
 	{
-		SPAWN.setWorld(player.getWorld());
-		player.teleport(SPAWN, PlayerTeleportEvent.TeleportCause.COMMAND);
+		player.teleport(VGCore.SPAWN, PlayerTeleportEvent.TeleportCause.COMMAND);
 		player.setInvisible(true);
 	}
 

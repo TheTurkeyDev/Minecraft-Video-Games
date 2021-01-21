@@ -9,15 +9,18 @@ import dev.theturkey.videogames.commands.PlayCommand;
 import dev.theturkey.videogames.games.GameManager;
 import dev.theturkey.videogames.games.brickbreaker.BrickBreakerGame;
 import dev.theturkey.videogames.games.minesweeper.MinesweeperDifficulty;
+import dev.theturkey.videogames.leaderboard.DefaultLeaderBoardController;
 import dev.theturkey.videogames.leaderboard.LeaderBoardManager;
 import dev.theturkey.videogames.leaderboard.LeaderBoardScoreType;
 import dev.theturkey.videogames.listeners.EntityListener;
 import dev.theturkey.videogames.listeners.PlayerListener;
+import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
+import org.bukkit.WorldType;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -33,13 +36,10 @@ public class VGCore extends JavaPlugin
 	public static final JsonParser JSON_PARSER = new JsonParser();
 	public static final Logger log = Logger.getLogger("VG");
 
-	private static Map<String, IVGCommand> commands = new HashMap<>();
+	public static World gameWorld;
+	public static final Location SPAWN = new Location(null, 0.5, 255, 0.5, 0, 0);
 
-	@Override
-	public ChunkGenerator getDefaultWorldGenerator(String worldName, String id)
-	{
-		return new VoidWorldGenerator();
-	}
+	private static Map<String, IVGCommand> commands = new HashMap<>();
 
 	@Override
 	public void onEnable()
@@ -58,11 +58,16 @@ public class VGCore extends JavaPlugin
 			return new ArrayList<>();
 		});
 
-		World mainWorld = getServer().getWorlds().get(0);
-		LeaderBoardManager.registerLeaderBoard(mainWorld, BrickBreakerGame.LEADER_BOARD_ID, "Brick Breaker High Scores", LeaderBoardScoreType.NUMBER, false);
-		LeaderBoardManager.registerLeaderBoard(mainWorld, MinesweeperDifficulty.EASY.getLeaderBoardKey(), "Minesweeper Easy Mode High Scores", LeaderBoardScoreType.TIME_MS, true);
-		LeaderBoardManager.registerLeaderBoard(mainWorld, MinesweeperDifficulty.MEDIUM.getLeaderBoardKey(), "Minesweeper Medium Mode Scores", LeaderBoardScoreType.TIME_MS, true);
-		LeaderBoardManager.registerLeaderBoard(mainWorld, MinesweeperDifficulty.HARD.getLeaderBoardKey(), "Minesweeper Hard Mode Scores", LeaderBoardScoreType.TIME_MS, true);
+		WorldCreator wc = new WorldCreator("video_games_world");
+		wc.generator(new VoidWorldGenerator()).generateStructures(false).type(WorldType.FLAT).environment(World.Environment.NORMAL).generatorSettings("");
+		gameWorld = getServer().createWorld(wc);
+		SPAWN.setWorld(gameWorld);
+		LeaderBoardManager.registerLeaderBoard(BrickBreakerGame.LEADER_BOARD_ID, "Brick Breaker High Scores", LeaderBoardScoreType.NUMBER, false);
+		LeaderBoardManager.registerLeaderBoard(MinesweeperDifficulty.EASY.getLeaderBoardKey(), "Minesweeper Easy Mode High Scores", LeaderBoardScoreType.TIME_MS, true);
+		LeaderBoardManager.registerLeaderBoard(MinesweeperDifficulty.MEDIUM.getLeaderBoardKey(), "Minesweeper Medium Mode Scores", LeaderBoardScoreType.TIME_MS, true);
+		LeaderBoardManager.registerLeaderBoard(MinesweeperDifficulty.HARD.getLeaderBoardKey(), "Minesweeper Hard Mode Scores", LeaderBoardScoreType.TIME_MS, true);
+
+		LeaderBoardManager.setLeaderBoardController(new DefaultLeaderBoardController());
 	}
 
 	@Override
