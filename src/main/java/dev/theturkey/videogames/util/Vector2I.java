@@ -7,6 +7,12 @@ public class Vector2I
 	private int x;
 	private int y;
 
+	public Vector2I(Vector2I vec)
+	{
+		this.x = vec.getX();
+		this.y = vec.getY();
+	}
+
 	public Vector2I(int x, int y)
 	{
 		this.x = x;
@@ -21,6 +27,13 @@ public class Vector2I
 	public int getY()
 	{
 		return y;
+	}
+
+	public Vector2I set(int x, int y)
+	{
+		this.x = x;
+		this.y = y;
+		return this;
 	}
 
 	public Vector2I add(int x, int y)

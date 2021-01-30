@@ -4,6 +4,7 @@ import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.games.brickbreaker.BrickBreakerGame;
 import dev.theturkey.videogames.games.minesweeper.MineSweeper;
 import dev.theturkey.videogames.games.minesweeper.MinesweeperDifficulty;
+import dev.theturkey.videogames.games.tetris.TetrisGame;
 import dev.theturkey.videogames.leaderboard.LeaderBoardManager;
 import dev.theturkey.videogames.util.Vector2I;
 import dev.theturkey.videogames.util.Vector3I;
@@ -29,6 +30,7 @@ public class GameManager
 	{
 		GAMES.put("brickbreaker", VideoGamesEnum.BRICK_BREAKER);
 		GAMES.put("minesweeper", VideoGamesEnum.MINESWEEPER);
+		GAMES.put("tetris", VideoGamesEnum.TETRIS);
 	}
 
 	private static final List<Vector2I> ACTIVE_GAME_LOCS = new ArrayList<>();
@@ -155,6 +157,9 @@ public class GameManager
 				}
 
 				vGame = new MineSweeper(gameLoc, difficulty);
+				break;
+			case TETRIS:
+				vGame = new TetrisGame(gameLoc);
 				break;
 			default:
 				player.sendMessage("Sorry that is not a valid game!");

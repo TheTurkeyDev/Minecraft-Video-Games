@@ -5,7 +5,7 @@ version: ${projectVersion}
 authors: [TurkeyDev]
 depend: ['ProtocolLib']
 api-version: '1.16'
-load: STARTUP
+load: POSTWORLD
 commands:
   games:
     description: Get a list of available games

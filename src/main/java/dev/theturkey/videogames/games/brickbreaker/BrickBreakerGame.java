@@ -18,6 +18,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
+import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -228,8 +229,11 @@ public class BrickBreakerGame extends VideoGameBase
 	}
 
 	@Override
-	public void onPlayerJump()
+	public void onKeyPress(Player player, int key)
 	{
+		if(key != KeyEvent.VK_SPACE)
+			return;
+
 		for(Ball ball : balls)
 		{
 			if(ball.isBallGrabbed())

@@ -9,6 +9,7 @@ import dev.theturkey.videogames.commands.PlayCommand;
 import dev.theturkey.videogames.games.GameManager;
 import dev.theturkey.videogames.games.brickbreaker.BrickBreakerGame;
 import dev.theturkey.videogames.games.minesweeper.MinesweeperDifficulty;
+import dev.theturkey.videogames.games.tetris.TetrisGame;
 import dev.theturkey.videogames.leaderboard.DefaultLeaderBoardController;
 import dev.theturkey.videogames.leaderboard.LeaderBoardManager;
 import dev.theturkey.videogames.leaderboard.LeaderBoardScoreType;
@@ -64,8 +65,9 @@ public class VGCore extends JavaPlugin
 		SPAWN.setWorld(gameWorld);
 		LeaderBoardManager.registerLeaderBoard(BrickBreakerGame.LEADER_BOARD_ID, "Brick Breaker High Scores", LeaderBoardScoreType.NUMBER, false);
 		LeaderBoardManager.registerLeaderBoard(MinesweeperDifficulty.EASY.getLeaderBoardKey(), "Minesweeper Easy Mode High Scores", LeaderBoardScoreType.TIME_MS, true);
-		LeaderBoardManager.registerLeaderBoard(MinesweeperDifficulty.MEDIUM.getLeaderBoardKey(), "Minesweeper Medium Mode Scores", LeaderBoardScoreType.TIME_MS, true);
-		LeaderBoardManager.registerLeaderBoard(MinesweeperDifficulty.HARD.getLeaderBoardKey(), "Minesweeper Hard Mode Scores", LeaderBoardScoreType.TIME_MS, true);
+		LeaderBoardManager.registerLeaderBoard(MinesweeperDifficulty.MEDIUM.getLeaderBoardKey(), "Minesweeper Medium Mode High Scores", LeaderBoardScoreType.TIME_MS, true);
+		LeaderBoardManager.registerLeaderBoard(MinesweeperDifficulty.HARD.getLeaderBoardKey(), "Minesweeper Hard Mode High Scores", LeaderBoardScoreType.TIME_MS, true);
+		LeaderBoardManager.registerLeaderBoard(TetrisGame.LEADER_BOARD_ID, "Tetris High Scores", LeaderBoardScoreType.NUMBER, false);
 
 		LeaderBoardManager.setLeaderBoardController(new DefaultLeaderBoardController());
 	}

@@ -53,7 +53,7 @@ public abstract class VideoGameBase
 
 	public abstract void onEntityCollide(Entity entity);
 
-	public abstract void onPlayerJump();
+	public abstract void onKeyPress(Player player, int key);
 
 	public abstract void playerLeftClick(Player player);
 

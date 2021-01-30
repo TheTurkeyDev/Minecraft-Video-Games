@@ -368,7 +368,7 @@ public class MineSweeper extends VideoGameBase
 	}
 
 	@Override
-	public void onPlayerJump()
+	public void onKeyPress(Player player, int key)
 	{
 
 	}
