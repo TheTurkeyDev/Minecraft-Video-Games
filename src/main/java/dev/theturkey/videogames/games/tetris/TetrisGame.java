@@ -4,14 +4,18 @@ import dev.theturkey.videogames.VGCore;
 import dev.theturkey.videogames.games.GameManager;
 import dev.theturkey.videogames.games.VideoGameBase;
 import dev.theturkey.videogames.games.VideoGamesEnum;
+import dev.theturkey.videogames.leaderboard.LeaderBoardManager;
 import dev.theturkey.videogames.util.Hologram;
+import dev.theturkey.videogames.util.TextToBannerHelper;
 import dev.theturkey.videogames.util.Vector2I;
 import dev.theturkey.videogames.util.Vector3I;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
@@ -19,6 +23,8 @@ import java.awt.event.KeyEvent;
 
 public class TetrisGame extends VideoGameBase
 {
+	private static final DyeColor TEXT_COLOR = DyeColor.WHITE;
+	private static final DyeColor BG_COLOR = DyeColor.BLUE;
 	public static int WIDTH = 12;
 	public static int HEIGHT = 24;
 	private static final int Y_BASE = 75;
@@ -27,11 +33,19 @@ public class TetrisGame extends VideoGameBase
 	private int[] scoreAwards = new int[]{0, 40, 100, 300, 1200};
 	private int gameTick = -1;
 	private int score = 0;
+	private int level = 0;
+	private int levelLineClears = 0;
 	private int fallDelay = 20;
 	private int fallDelayTick = fallDelay;
-	private Hologram scoreHologram;
 
+	private boolean wasSwapped = false;
+
+	private Hologram scoreHologram;
+	private Hologram levelHologram;
+
+	private TetrisPiece nextPiece;
 	private TetrisPiece fallingPiece;
+	private TetrisPiece heldPiece = null;
 
 	public TetrisGame(Vector2I gameLoc)
 	{
@@ -41,12 +55,18 @@ public class TetrisGame extends VideoGameBase
 	@Override
 	public void constructGame(Player player)
 	{
+		level = 0;
+		fallDelay = 20;
+		fallDelayTick = fallDelay;
 		Vector3I worldLoc = getGameLocScaled();
 		fallingPiece = TetrisPiece.getRandomPiece();
 		fallingPiece.place(worldLoc);
+		nextPiece = TetrisPiece.getRandomPiece();
+		nextPiece.place(new Vector3I(worldLoc).add(-12, -4, 0));
 
 		Location playerLoc = getPlayerLoc();
 		scoreHologram = new Hologram(playerLoc.clone().add(-3, -1.5, 5), ChatColor.RED + "Score: " + score);
+		levelHologram = new Hologram(playerLoc.clone().add(-3, -1.75, 5), ChatColor.RED + "Level: " + level);
 
 		for(int x = 0; x < getWidth(); x++)
 		{
@@ -63,8 +83,14 @@ public class TetrisGame extends VideoGameBase
 			for(int yy = 0; yy < 6; yy++)
 			{
 				VGCore.gameWorld.getBlockAt(worldLoc.getX() + x - 10, worldLoc.getY() + (getHeight() - 4 - yy), worldLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.BLACK_CONCRETE);
+				VGCore.gameWorld.getBlockAt(worldLoc.getX() + x + 15, worldLoc.getY() + (getHeight() - 4 - yy), worldLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.BLACK_CONCRETE);
 			}
 		}
+
+		Location loc = new Location(VGCore.gameWorld, worldLoc.getX() - 6, worldLoc.getY() + (getHeight() - 3), worldLoc.getZ() + DIST_FROM_PLAYER + 1);
+		TextToBannerHelper.placeString("NEXT", loc, BlockFace.WEST, TEXT_COLOR, BG_COLOR);
+		loc = new Location(VGCore.gameWorld, worldLoc.getX() + 18, worldLoc.getY() + (getHeight() - 3), worldLoc.getZ() + DIST_FROM_PLAYER + 1);
+		TextToBannerHelper.placeString("HELD", loc, BlockFace.WEST, TEXT_COLOR, BG_COLOR);
 	}
 
 	@Override
@@ -85,23 +111,33 @@ public class TetrisGame extends VideoGameBase
 				if(!moved)
 				{
 					clearLines();
-
-					fallingPiece = TetrisPiece.getRandomPiece();
-					if(fallingPiece.spawn(gameScaled))
-					{
-						player.sendRawMessage(ChatColor.RED + "GAME OVER!");
-						player.sendRawMessage(ChatColor.GREEN + "Your score: " + score);
-						GameManager.leaveGame(player);
-					}
-					else
-					{
-						fallingPiece.place(gameScaled);
-					}
+					NextPiece(gameScaled, player);
 				}
 
 				fallDelayTick = fallDelay;
 			}
 		}, 0, 1);
+	}
+
+	public void NextPiece(Vector3I gameScaled, Player player)
+	{
+		wasSwapped = false;
+		nextPiece.clear(new Vector3I(gameScaled).add(-12, -4, 0));
+		fallingPiece = nextPiece;
+		nextPiece = TetrisPiece.getRandomPiece();
+		nextPiece.place(new Vector3I(gameScaled).add(-12, -4, 0));
+		if(fallingPiece.spawn(gameScaled))
+		{
+			player.sendRawMessage(ChatColor.RED + "GAME OVER!");
+			player.sendRawMessage(ChatColor.GREEN + "Your score: " + score);
+			Thread t = new Thread(() -> LeaderBoardManager.addScore(player, score, getLeaderBoardKey()));
+			t.start();
+			Bukkit.getScheduler().scheduleSyncDelayedTask(VGCore.getPlugin(), () -> GameManager.leaveGame(player), 40);
+		}
+		else
+		{
+			fallingPiece.place(gameScaled);
+		}
 	}
 
 	public void clearLines()
@@ -132,8 +168,17 @@ public class TetrisGame extends VideoGameBase
 			}
 		}
 
-		score += scoreAwards[lineClears];
+		score += (level + 1) * scoreAwards[lineClears];
 		scoreHologram.setText(ChatColor.RED + "Score: " + score);
+
+		this.levelLineClears += lineClears;
+		if(levelLineClears > 10)
+		{
+			level++;
+			fallDelay -= 2;
+			this.levelLineClears = 0;
+		}
+		levelHologram.setText(ChatColor.RED + "Level: " + level);
 	}
 
 	public void shiftBoardDown(int lineStart)
@@ -166,7 +211,11 @@ public class TetrisGame extends VideoGameBase
 		Vector3I gameLoc = getGameLocScaled();
 
 		fallingPiece.clear(gameLoc);
+		nextPiece.clear(new Vector3I(gameLoc).add(-12, -4, 0));
+		if(heldPiece != null)
+			heldPiece.clear(new Vector3I(gameLoc).add(12, -4, 0));
 		scoreHologram.remove();
+		levelHologram.remove();
 
 		for(int x = 0; x < getWidth(); x++)
 		{
@@ -177,11 +226,21 @@ public class TetrisGame extends VideoGameBase
 			}
 		}
 
+		VGCore.gameWorld.getBlockAt(gameLoc.getX() - 6, gameLoc.getY() + (getHeight() - 3), gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.AIR);
+		VGCore.gameWorld.getBlockAt(gameLoc.getX() - 7, gameLoc.getY() + (getHeight() - 3), gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.AIR);
+		VGCore.gameWorld.getBlockAt(gameLoc.getX() - 8, gameLoc.getY() + (getHeight() - 3), gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.AIR);
+		VGCore.gameWorld.getBlockAt(gameLoc.getX() - 9, gameLoc.getY() + (getHeight() - 3), gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.AIR);
+		VGCore.gameWorld.getBlockAt(gameLoc.getX() + 18, gameLoc.getY() + (getHeight() - 3), gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.AIR);
+		VGCore.gameWorld.getBlockAt(gameLoc.getX() + 17, gameLoc.getY() + (getHeight() - 3), gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.AIR);
+		VGCore.gameWorld.getBlockAt(gameLoc.getX() + 16, gameLoc.getY() + (getHeight() - 3), gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.AIR);
+		VGCore.gameWorld.getBlockAt(gameLoc.getX() + 15, gameLoc.getY() + (getHeight() - 3), gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.AIR);
+
 		for(int x = 0; x < 6; x++)
 		{
 			for(int yy = 0; yy < 6; yy++)
 			{
 				VGCore.gameWorld.getBlockAt(gameLoc.getX() + x - 10, gameLoc.getY() + (getHeight() - 4 - yy), gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.AIR);
+				VGCore.gameWorld.getBlockAt(gameLoc.getX() + x + 15, gameLoc.getY() + (getHeight() - 4 - yy), gameLoc.getZ() + DIST_FROM_PLAYER + 1).setType(Material.BLACK_CONCRETE);
 			}
 		}
 	}
@@ -212,7 +271,34 @@ public class TetrisGame extends VideoGameBase
 				fallingPiece.move(gameScaled, -1);
 				break;
 			case KeyEvent.VK_SPACE:
-				player.sendRawMessage("Space PRESSED!");
+				fallingPiece.clear(gameScaled);
+				while(fallingPiece.fall(gameScaled)) ;
+				fallingPiece.place(gameScaled);
+				clearLines();
+				NextPiece(gameScaled, player);
+
+				break;
+			case KeyEvent.VK_SHIFT:
+				if(wasSwapped)
+					break;
+				TetrisPiece temp = heldPiece;
+				fallingPiece.clear(gameScaled);
+				heldPiece = fallingPiece;
+				heldPiece.resetGameLoc();
+
+				if(temp == null)
+				{
+					NextPiece(gameScaled, player);
+				}
+				else
+				{
+					temp.clear(new Vector3I(gameScaled).add(12, -4, 0));
+					fallingPiece = temp;
+					fallingPiece.resetGameLoc();
+					fallingPiece.spawn(gameScaled);
+				}
+				heldPiece.place(new Vector3I(gameScaled).add(12, -4, 0));
+				wasSwapped = true;
 				break;
 		}
 		fallingPiece.place(gameScaled);

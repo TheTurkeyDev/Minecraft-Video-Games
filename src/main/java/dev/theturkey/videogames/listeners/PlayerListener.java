@@ -17,6 +17,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
 
 import java.awt.event.KeyEvent;
@@ -111,6 +112,17 @@ public class PlayerListener implements Listener
 		{
 			e.getPlayer().setWalkSpeed(.05f);
 			e.setCancelled(true);
+		}
+	}
+
+	@EventHandler
+	public void onPlayerSneak(PlayerToggleSneakEvent e)
+	{
+		if(e.isSneaking())
+		{
+			VideoGameBase game = GameManager.getGameForPlayer(e.getPlayer());
+			if(game != null)
+				game.onKeyPress(e.getPlayer(), KeyEvent.VK_SHIFT);
 		}
 	}
 

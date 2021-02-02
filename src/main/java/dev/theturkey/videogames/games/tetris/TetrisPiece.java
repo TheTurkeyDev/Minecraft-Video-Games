@@ -85,7 +85,7 @@ public class TetrisPiece
 		this.blockRot = blockRot;
 		this.material = material;
 		blockLocs.addAll(locs);
-		gameLoc = new Vector2I(5, 22);
+		resetGameLoc();
 	}
 
 	public TetrisPiece clone()
@@ -194,5 +194,10 @@ public class TetrisPiece
 
 		for(Vector2I vector2I : blockLocs)
 			loc.clone().add(vector2I.getX(), vector2I.getY(), 0).getBlock().setType(material);
+	}
+
+	public void resetGameLoc()
+	{
+		gameLoc = new Vector2I(5, 22);
 	}
 }
