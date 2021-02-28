@@ -8,8 +8,8 @@ if (System.getenv('BUILD_NUMBER') != null)
 else
     logger.lifecycle "No build number detected, setting to 0"
 
-group = "dev.theturkey.videogames"
-archivesBaseName = "videogames"
+group = "dev.theturkey.mcarcade"
+archivesBaseName = "mcarcade"
 version = "${mod_version}.${buildnumber}"
 
 sourceCompatibility = targetCompatibility = '1.8'
@@ -18,12 +18,12 @@ repositories {
     mavenCentral()
     mavenLocal()
     maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
-    maven { url 'https://repo.dmulloy2.net/nexus/repository/public/' }
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
     compileOnly 'org.spigotmc:spigot-api:1.16.4-R0.1-SNAPSHOT'
-    compileOnly group: "com.comphenix.protocol", name: "ProtocolLib", version: "4.6.0-SNAPSHOT";
+    compileOnly group: "com.github.dmulloy2", name: "ProtocolLib", version: "4.6.0";
 }
 
 processResources {

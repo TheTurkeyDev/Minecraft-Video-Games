@@ -1,15 +1,11 @@
-name: 'video_games'
-main: dev.theturkey.videogames.VGCore
-description: 'Remaking video games in Minecraft!'
+name: 'MC_Arcade'
+main: dev.theturkey.mcarcade.MCACore
+description: 'Remaking various arcade and video games in Minecraft!'
 version: ${projectVersion}
 authors: [TurkeyDev]
 depend: ['ProtocolLib']
 api-version: '1.16'
 load: POSTWORLD
 commands:
-  games:
-    description: Get a list of available games
-  play:
-    description: Used to play a game
-  leave:
-    description: Used to leave a game
+  mcarcade:
+    description: MC Arcade Commands
