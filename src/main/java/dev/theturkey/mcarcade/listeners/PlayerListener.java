@@ -50,7 +50,7 @@ public class PlayerListener implements Listener
 	{
 		if(e.getFrom().equals(MCACore.gameWorld))
 		{
-			e.getPlayer().setWalkSpeed(1);
+			e.getPlayer().setWalkSpeed(0.2f);
 			e.getPlayer().setInvisible(false);
 		}
 	}
