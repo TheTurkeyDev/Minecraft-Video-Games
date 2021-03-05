@@ -13,6 +13,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -42,6 +43,16 @@ public class PlayerListener implements Listener
 			e.getPlayer().setWalkSpeed(.05f);
 			GameManager.sendPlayerToSpawn(e.getPlayer());
 		}, 1);
+	}
+
+	@EventHandler
+	public void onWorldChange(PlayerChangedWorldEvent e)
+	{
+		if(e.getFrom().equals(MCACore.gameWorld))
+		{
+			e.getPlayer().setWalkSpeed(1);
+			e.getPlayer().setInvisible(false);
+		}
 	}
 
 	@EventHandler
