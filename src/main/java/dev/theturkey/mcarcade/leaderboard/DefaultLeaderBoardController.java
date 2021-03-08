@@ -2,6 +2,7 @@ package dev.theturkey.mcarcade.leaderboard;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import dev.theturkey.mcarcade.Config;
 import dev.theturkey.mcarcade.MCACore;
 import org.bukkit.entity.Player;
 
@@ -17,26 +18,24 @@ import java.util.logging.Level;
 
 public class DefaultLeaderBoardController implements ILeaderBoardController
 {
-	private String host, port, database, username, password;
+
 	private static Connection connection;
 
 	public DefaultLeaderBoardController()
 	{
-		host = "localhost";
-		port = "3306";
-		database = "video_games_db";
-		username = "minecraft";
-		password = "password123";
+		//database = "video_games_db";
+		//username = "minecraft";
+		//password = "password123";
 		try
 		{
 			openConnection();
-		} catch(ClassNotFoundException | SQLException e)
+		} catch(SQLException e)
 		{
 			e.printStackTrace();
 		}
 	}
 
-	public void openConnection() throws SQLException, ClassNotFoundException
+	public void openConnection() throws SQLException
 	{
 		if(connection != null && !connection.isClosed())
 		{
@@ -45,7 +44,7 @@ public class DefaultLeaderBoardController implements ILeaderBoardController
 		try
 		{
 			Class.forName("com.mysql.jdbc.Driver");
-			connection = DriverManager.getConnection("jdbc:mysql://" + this.host + ":" + this.port + "/" + this.database, this.username, this.password);
+			connection = DriverManager.getConnection("jdbc:mysql://" + Config.dbHost + ":" + Config.dbPort + "/" + Config.dbDatabase, Config.dbUsername, Config.dbPassword);
 		} catch(Exception e)
 		{
 			MCACore.log.log(Level.WARNING, "Failed to make mysql DB connection for Local leaderboard!");

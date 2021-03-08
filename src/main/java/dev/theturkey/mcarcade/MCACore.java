@@ -23,6 +23,7 @@ import org.bukkit.WorldCreator;
 import org.bukkit.WorldType;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -48,6 +49,8 @@ public class MCACore extends JavaPlugin
 	@Override
 	public void onEnable()
 	{
+		Config.loadConfig(this.getConfig());
+
 		PluginManager m = getServer().getPluginManager();
 		m.registerEvents(new PlayerListener(), this);
 		m.registerEvents(new EntityListener(), this);
@@ -79,6 +82,7 @@ public class MCACore extends JavaPlugin
 		LeaderBoardManager.registerLeaderBoard(TetrisGame.LEADER_BOARD_ID, "Tetris High Scores", LeaderBoardScoreType.NUMBER, false);
 
 		LeaderBoardManager.setLeaderBoardController(new DefaultLeaderBoardController());
+
 	}
 
 	@Override
